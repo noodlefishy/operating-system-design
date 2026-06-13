@@ -6,13 +6,7 @@ import io.cuttlefish.instructions.*
 class Backend() {
     private fun registerEncode(start: Int, end: Int, reg: RegisterType): UShort {
         val regA = reg.ordinal
-        val preMerge = (regA shl (15 - start)).toUShort()
-        return preMerge
-    }
-
-    @Deprecated("Not used often enough")
-    private fun immediateEncode(start: Int, end: Int, immediate: Short): UShort {
-        val preMerge = (immediate.toInt() shl (15 - start)).toUShort()
+        val preMerge = (regA shl (start - (start - end))).toUShort()
         return preMerge
     }
 
