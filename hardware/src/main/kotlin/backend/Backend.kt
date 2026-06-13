@@ -91,6 +91,8 @@ class Backend() {
     }
 
     private fun encode(single: Instruction): UShort {
+        if (single is Instruction.DataWord) return single.value.toUShort()
+
         var value: UShort
         val opcode = InstructionType.entries.find { it.name == single::class.simpleName }!!.ordinal
         value = (opcode shl (15 - (15 - 13))).toUShort()
