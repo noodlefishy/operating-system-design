@@ -16,8 +16,6 @@ class Cpu(val mmu: MemoryBus) {
     suspend fun tick() {
         if (isHalted) return
 
-        registers.write(RegisterType.RZ, 0)
-
         // 1. FETCH
         val pc = registers.read(RegisterType.PC)
         val rawInstruction = mmu.read(pc)
@@ -50,10 +48,6 @@ class Cpu(val mmu: MemoryBus) {
             is Instruction.Nand -> handlerNand(instruction)
             is Instruction.Sw -> handleSw(instruction)
         }
-
-        registers.write(RegisterType.RZ, 0)
-
-
     }
 
     suspend fun RegisterType.read(): Short = registers.read(this)
