@@ -8,6 +8,14 @@ import kotlin.experimental.*
 class Parser(val file: File) {
     val text = file.readLines()
 
+    private fun String.toImmediateFormat(): Short {
+        return when {
+            this.startsWith("0x") -> this.substring(2).toShort(16)
+            this.startsWith("0") && this.length > 1 -> this.toShort(8)
+            else -> this.toShort(10)
+        }
+    }
+
     fun decode(): List<Instruction> {
         val instructions = mutableListOf<Instruction>()
         for (line in text) {
@@ -27,7 +35,7 @@ class Parser(val file: File) {
                 }
 
                 Addi -> {
-                    val imm = parts[3].toShort()
+                    val imm = parts[3].toImmediateFormat()
                     if (imm !in -64..63) {
                         throw Exception("Assembler Error: Immediate $imm out of range for ADDI (-64 to 63)")
                     }
@@ -45,7 +53,7 @@ class Parser(val file: File) {
                 }
 
                 Lui -> {
-                    val imm = parts[3].toShort()
+                    val imm = parts[3].toImmediateFormat()
                     if (imm !in 0..1023) {
                         throw Exception("Assembler Error: Immediate $imm out of range for LUI (0 to 1023)")
                     }
@@ -55,7 +63,7 @@ class Parser(val file: File) {
                 }
 
                 Lw -> {
-                    val imm = parts[3].toShort()
+                    val imm = parts[3].toImmediateFormat()
                     if (imm !in -64..63) {
                         throw Exception("Assembler Error: Immediate $imm out of range for LW (-64 to 63)")
                     }
@@ -65,7 +73,7 @@ class Parser(val file: File) {
                 }
 
                 Sw -> {
-                    val imm = parts[3].toShort()
+                    val imm = parts[3].toImmediateFormat()
                     if (imm !in -64..63) {
                         throw Exception("Assembler Error: Immediate $imm out of range for SW (-64 to 63)")
                     }
@@ -75,7 +83,7 @@ class Parser(val file: File) {
                 }
 
                 Beq -> {
-                    val imm = parts[3].toShort()
+                    val imm = parts[3].toImmediateFormat()
                     if (imm !in -64..63) {
                         throw Exception("Assembler Error: Immediate $imm out of range for BEQ (-64 to 63)")
                     }
@@ -85,7 +93,7 @@ class Parser(val file: File) {
                 }
 
                 Jalr -> {
-                    val imm = parts[3].toShort()
+                    val imm = parts[3].toImmediateFormat()
                     if (imm !in -64..63) {
                         throw Exception("Assembler Error: Immediate $imm out of range for JALR (-64 to 63)")
                     }
@@ -108,7 +116,7 @@ class Parser(val file: File) {
 
                 LLi -> {
                     // addi regA, regA, (imm & 0x3F)
-                    val imm = parts[3].toShort()
+                    val imm = parts[3].toImmediateFormat()
                     if (imm !in -64..63) {
                         throw Exception("Assembler Error: Immediate $imm out of range for JALR (-64 to 63)")
                     }
@@ -120,7 +128,7 @@ class Parser(val file: File) {
 
                 Movi -> {
 
-                    val imm = parts[2].toShort()
+                    val imm = parts[2].toImmediateFormat()
                     if (imm !in Short.MIN_VALUE..Short.MAX_VALUE) {
                         throw Exception("Assembler Error: Immediate $imm out of range for Movi (${Short.MIN_VALUE} to ${Short.MAX_VALUE})")
                     }
