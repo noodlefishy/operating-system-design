@@ -3,6 +3,9 @@ package io.cuttlefish
 import io.cuttlefish.backend.*
 import io.cuttlefish.components.*
 import io.cuttlefish.components.devices.Console
+import io.cuttlefish.linking.*
+import kotlinx.serialization.*
+import kotlinx.serialization.json.*
 import java.io.*
 
 
@@ -11,6 +14,15 @@ import java.io.*
 // lc fileMain
 
 suspend fun main(args: Array<String>) {
+    val l = Linker(
+        Json.decodeFromString<ObjectFile>(File("main.o").readText()),
+        Json.decodeFromString<ObjectFile>(File("maths.o").readText())
+    )
+    var s = ""
+    l.link().forEach { s += "$it\n" }
+    File("main").writeText(s)
+
+
     when (args.firstOrNull()) {
         "-w" -> {
             val parse = Parser(File(args[1]), 0).decode()
@@ -40,5 +52,13 @@ suspend fun main(args: Array<String>) {
 
 
         }
+
+        "-o" -> {
+            val obj = ObjectExcreter(File(args[1])).generate()
+            val json = Json { prettyPrint = true }.encodeToString(obj)
+            File("${File(args[1]).nameWithoutExtension}.o").writeText(json)
+        }
+
+
     }
 }
