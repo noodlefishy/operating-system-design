@@ -50,7 +50,6 @@ class Cpu(val mmu: MemoryBus) {
         registers.write(RegisterType.RZ, 0)
 
 
-        println("I = $instruction | STATE = $registers")
 
     }
 
