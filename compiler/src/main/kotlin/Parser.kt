@@ -52,6 +52,7 @@ class Parser(file: File, val baseAddress: Short) {
                 val opcode = tokens[startIndex].lowercase()
                 when (opcode) {
                     "movi" -> addressCounter = (addressCounter + 2).toShort() // LUI + ADDI
+                    "call" -> addressCounter = (addressCounter + 3).toShort() // LUI + ADDI + JALR
                     ".space" -> {
                         val count = tokens[startIndex + 1].toNumber().toInt()
                         addressCounter = (addressCounter + count).toShort()
@@ -88,159 +89,182 @@ class Parser(file: File, val baseAddress: Short) {
                     currentPC++
                 }
 
-                "ret" -> {
-                    // ret $reg
-                    instructions += Instruction.Jalr(RegisterType.R0, RegisterType.R5, 0)
-                    currentPC++
-                }
 
-
-                "add" -> {
-                    instructions += Instruction.Add(
-                        register1 = tokens[startIndex + 1].toRegisterType(),
-                        register2 = tokens[startIndex + 2].toRegisterType(),
-                        register3 = tokens[startIndex + 3].toRegisterType()
-                    )
-                    currentPC++
-                }
-
-                "addi" -> {
-                    val imm = resolveValue(tokens[startIndex + 3], currentPC)
-                    instructions += Instruction.Addi(
-                        register1 = tokens[startIndex + 1].toRegisterType(),
-                        register2 = tokens[startIndex + 2].toRegisterType(),
-                        immediate = imm
-                    )
-                    currentPC++
-                }
-
-                "nand" -> {
-                    instructions += Instruction.Nand(
-                        register1 = tokens[startIndex + 1].toRegisterType(),
-                        register2 = tokens[startIndex + 2].toRegisterType(),
-                        register3 = tokens[startIndex + 3].toRegisterType()
-                    )
-                    currentPC++
-                }
-
-                "lui" -> {
-                    val imm = resolveValue(tokens[startIndex + 2], currentPC)
-                    instructions += Instruction.Lui(
-                        register1 = tokens[startIndex + 1].toRegisterType(), immediate = imm
-                    )
-                    currentPC++
-                }
-
-                "lw" -> {
-                    val imm = resolveValue(tokens[startIndex + 3], currentPC)
-                    instructions += Instruction.Lw(
-                        register1 = tokens[startIndex + 1].toRegisterType(),
-                        register2 = tokens[startIndex + 2].toRegisterType(),
-                        immediate = imm
-                    )
-                    currentPC++
-                }
-
-                "sw" -> {
-                    val imm = resolveValue(tokens[startIndex + 3], currentPC)
-                    instructions += Instruction.Sw(
-                        register1 = tokens[startIndex + 1].toRegisterType(),
-                        register2 = tokens[startIndex + 2].toRegisterType(),
-                        immediate = imm
-                    )
-                    currentPC++
-                }
-
-                "beq" -> {
-                    val imm = resolveValue(tokens[startIndex + 3], currentPC, isRelative = true)
-                    instructions += Instruction.Beq(
-                        register1 = tokens[startIndex + 1].toRegisterType(),
-                        register2 = tokens[startIndex + 2].toRegisterType(),
-                        immediate = imm
-                    )
-                    currentPC++
-                }
-
-                "jalr" -> {
-                    // Jalr can have an immediate for Syscalls, or default to 0
-                    val imm = if (startIndex + 3 < tokens.size) resolveValue(
-                        tokens[startIndex + 3], currentPC
-                    ) else 0.toShort()
-                    instructions += Instruction.Jalr(
-                        register1 = tokens[startIndex + 1].toRegisterType(),
-                        register2 = tokens[startIndex + 2].toRegisterType(),
-                        immediate = imm
-                    )
-                    currentPC++
-                }
-
-                // --- Pseudo-Instructions ---
-                "nop" -> {
-                    instructions += Instruction.Add(RegisterType.R0, RegisterType.R0, RegisterType.R0)
-                    currentPC++
-                }
-
-                "halt" -> {
-                    instructions += Instruction.Jalr(RegisterType.R0, RegisterType.R0, immediate = 1)
-                    currentPC++
-                }
-
-                "lli" -> {
-                    val imm = resolveValue(tokens[startIndex + 2], currentPC)
-                    val maskedImm = (imm.toInt() and 0x3F).toShort() // Bottom 6 bits
-                    instructions += Instruction.Addi(
-                        register1 = tokens[startIndex + 1].toRegisterType(),
-                        register2 = tokens[startIndex + 1].toRegisterType(),
-                        immediate = maskedImm
-                    )
-                    currentPC++
-                }
-
-                "movi" -> {
-                    val imm = resolveValue(tokens[startIndex + 2], currentPC)
+                "call" -> {
+                    // call label (via R7)
+                    // movi r7 m_multiply
+                    //    jalr r7 r7 0
+                    val imm = resolveValue(tokens[startIndex + 1], currentPC)
                     val luiPart = (imm.toInt() shr 6).toShort() // Top 10 bits
                     val lliPart = (imm.toInt() and 0x3F).toShort() // Bottom 6 bits
-                    val reg = tokens[startIndex + 1].toRegisterType()
+                    val reg = RegisterType.R7
 
-                    instructions += Instruction.Lui(register1 = reg, immediate = luiPart)
-                    instructions += Instruction.Addi(register1 = reg, register2 = reg, immediate = lliPart)
-                    currentPC = (currentPC + 2).toShort()
-                }
+                    val lui = Instruction.Lui(register1 = reg, immediate = luiPart)
 
-                ".fill" -> {
-                    val parsed = tokens.subList(startIndex + 1, tokens.size).joinToString(" ")
-                    if (parsed.all { it.isDigit() } || symbolTable.containsKey(tokens[startIndex + 1])) {
-                        val value = resolveValue(tokens[startIndex + 1], currentPC)
-                        instructions += Instruction.DataWord(value)
-                        currentPC++
+                    val addi = Instruction.Addi(register1 = reg, register2 = reg, immediate = lliPart)
+                    val jalr = Instruction.Jalr(reg, reg, 0)
+                    instructions += lui
+                    instructions += addi
+                    instructions += jalr
 
-                    } else if (parsed.toCharArray().count { it == '"' } == 2) {
-                        val newChars = parsed.removeSuffix("\"").removePrefix("\"").replace("\\n", "\n")
-                        for (char in newChars) {
-                            instructions += Instruction.DataWord(char.code.toShort())
-                            currentPC++
-                        }
-                        instructions += Instruction.DataWord(0)
-                        currentPC++
-                    } else {
-                        println(parsed)
-                        error("")
-                    }
+                    currentPC = (currentPC + 3).toShort()
 
 
-                }
-
-                ".space" -> {
-                    val count = resolveValue(tokens[startIndex + 1], currentPC).toInt()
-                    repeat(count) {
-                        instructions += Instruction.DataWord(0)
-                    }
-                    currentPC = (currentPC + count).toShort()
-                }
-
-                else -> throw Exception("Assembler Error: Unknown instruction or directive '$opcode'")
             }
+
+            "ret" -> {
+                // ret (usually R7)
+                instructions += Instruction.Jalr(RegisterType.R0, RegisterType.R7, 0)
+                currentPC++
+            }
+
+
+            "add" -> {
+                instructions += Instruction.Add(
+                    register1 = tokens[startIndex + 1].toRegisterType(),
+                    register2 = tokens[startIndex + 2].toRegisterType(),
+                    register3 = tokens[startIndex + 3].toRegisterType()
+                )
+                currentPC++
+            }
+
+            "addi" -> {
+                val imm = resolveValue(tokens[startIndex + 3], currentPC)
+                instructions += Instruction.Addi(
+                    register1 = tokens[startIndex + 1].toRegisterType(),
+                    register2 = tokens[startIndex + 2].toRegisterType(),
+                    immediate = imm
+                )
+                currentPC++
+            }
+
+            "nand" -> {
+                instructions += Instruction.Nand(
+                    register1 = tokens[startIndex + 1].toRegisterType(),
+                    register2 = tokens[startIndex + 2].toRegisterType(),
+                    register3 = tokens[startIndex + 3].toRegisterType()
+                )
+                currentPC++
+            }
+
+            "lui" -> {
+                val imm = resolveValue(tokens[startIndex + 2], currentPC)
+                instructions += Instruction.Lui(
+                    register1 = tokens[startIndex + 1].toRegisterType(), immediate = imm
+                )
+                currentPC++
+            }
+
+            "lw" -> {
+                val imm = resolveValue(tokens[startIndex + 3], currentPC)
+                instructions += Instruction.Lw(
+                    register1 = tokens[startIndex + 1].toRegisterType(),
+                    register2 = tokens[startIndex + 2].toRegisterType(),
+                    immediate = imm
+                )
+                currentPC++
+            }
+
+            "sw" -> {
+                val imm = resolveValue(tokens[startIndex + 3], currentPC)
+                instructions += Instruction.Sw(
+                    register1 = tokens[startIndex + 1].toRegisterType(),
+                    register2 = tokens[startIndex + 2].toRegisterType(),
+                    immediate = imm
+                )
+                currentPC++
+            }
+
+            "beq" -> {
+                val imm = resolveValue(tokens[startIndex + 3], currentPC, isRelative = true)
+                instructions += Instruction.Beq(
+                    register1 = tokens[startIndex + 1].toRegisterType(),
+                    register2 = tokens[startIndex + 2].toRegisterType(),
+                    immediate = imm
+                )
+                currentPC++
+            }
+
+            "jalr" -> {
+                // Jalr can have an immediate for Syscalls, or default to 0
+                val imm = if (startIndex + 3 < tokens.size) resolveValue(
+                    tokens[startIndex + 3], currentPC
+                ) else 0.toShort()
+                instructions += Instruction.Jalr(
+                    register1 = tokens[startIndex + 1].toRegisterType(),
+                    register2 = tokens[startIndex + 2].toRegisterType(),
+                    immediate = imm
+                )
+                currentPC++
+            }
+
+            // --- Pseudo-Instructions ---
+            "nop" -> {
+                instructions += Instruction.Add(RegisterType.R0, RegisterType.R0, RegisterType.R0)
+                currentPC++
+            }
+
+            "halt" -> {
+                instructions += Instruction.Jalr(RegisterType.R0, RegisterType.R0, immediate = 1)
+                currentPC++
+            }
+
+            "lli" -> {
+                val imm = resolveValue(tokens[startIndex + 2], currentPC)
+                val maskedImm = (imm.toInt() and 0x3F).toShort() // Bottom 6 bits
+                instructions += Instruction.Addi(
+                    register1 = tokens[startIndex + 1].toRegisterType(),
+                    register2 = tokens[startIndex + 1].toRegisterType(),
+                    immediate = maskedImm
+                )
+                currentPC++
+            }
+
+            "movi" -> {
+                val imm = resolveValue(tokens[startIndex + 2], currentPC)
+                val luiPart = (imm.toInt() shr 6).toShort() // Top 10 bits
+                val lliPart = (imm.toInt() and 0x3F).toShort() // Bottom 6 bits
+                val reg = tokens[startIndex + 1].toRegisterType()
+
+                instructions += Instruction.Lui(register1 = reg, immediate = luiPart)
+                instructions += Instruction.Addi(register1 = reg, register2 = reg, immediate = lliPart)
+                currentPC = (currentPC + 2).toShort()
+            }
+
+            ".fill" -> {
+                val parsed = tokens.subList(startIndex + 1, tokens.size).joinToString(" ")
+                if (parsed.all { it.isDigit() } || symbolTable.containsKey(tokens[startIndex + 1])) {
+                    val value = resolveValue(tokens[startIndex + 1], currentPC)
+                    instructions += Instruction.DataWord(value)
+                    currentPC++
+
+                } else if (parsed.toCharArray().count { it == '"' } == 2) {
+                    val newChars = parsed.removeSuffix("\"").removePrefix("\"").replace("\\n", "\n")
+                    for (char in newChars) {
+                        instructions += Instruction.DataWord(char.code.toShort())
+                        currentPC++
+                    }
+                    instructions += Instruction.DataWord(0)
+                    currentPC++
+                } else {
+                    println(parsed)
+                    error("")
+                }
+
+
+            }
+
+            ".space" -> {
+                val count = resolveValue(tokens[startIndex + 1], currentPC).toInt()
+                repeat(count) {
+                    instructions += Instruction.DataWord(0)
+                }
+                currentPC = (currentPC + count).toShort()
+            }
+
+            else -> throw Exception("Assembler Error: Unknown instruction or directive '$opcode'")
         }
-        return instructions
     }
+    return instructions
+}
 }
