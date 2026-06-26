@@ -3,9 +3,6 @@ plugins {
 }
 rootProject.name = "Operating-System"
 include("hardware")
-include("hardware")
-include("kernal")
 include("compiler")
-include("cli")
 include("terminal")
 include("kernel")
