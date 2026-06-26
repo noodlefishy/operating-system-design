@@ -9,4 +9,6 @@ sealed interface Instruction {
     data class Sw(val register1: RegisterType, val register2: RegisterType, val immediate: Short) : Instruction
     data class Beq(val register1: RegisterType, val register2: RegisterType, val immediate: Short) : Instruction
     data class Jalr(val register1: RegisterType, val register2: RegisterType, val immediate: Short) : Instruction
+
+    data class DataWord(val value: Short) : Instruction
 }

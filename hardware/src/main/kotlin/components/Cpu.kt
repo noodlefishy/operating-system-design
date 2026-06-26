@@ -47,6 +47,7 @@ class Cpu(val mmu: MemoryBus) {
             is Instruction.Lw -> handleLw(instruction)
             is Instruction.Nand -> handlerNand(instruction)
             is Instruction.Sw -> handleSw(instruction)
+            is Instruction.DataWord -> error("The data-words like .fill and .space shouldn't be there?")
         }
     }
 
