@@ -1,0 +1,11 @@
+package io.cuttlefish.components
+
+
+object Clock {
+    // in ms
+    const val ALU_CALCULATION_TIME = 20L
+    const val MEMORY_READ_TIME = 30L
+    const val MEMORY_WRITE_TIME = 50L
+    const val REGISTER_READ_TIME = 5L
+    const val REGISTER_WRITE_TIME = 10L
+}
