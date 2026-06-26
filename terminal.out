@@ -1,8 +1,0 @@
-[24576, 8202, 25600, 9354, 16, 63105]
-Lui(register1=R1, immediate=0), Addi(register1=R1, register2=R1, immediate=10), Lui(register1=R2, immediate=0), Addi(register1=R2, register2=R2, immediate=10), Add(register1=R1, register2=R1, register3=R2), Jalr(register1=RZ, register2=RZ, immediate=1)
-INST = Lui(register1=R1, immediate=0) | STATE = {R1=0, R2=0, R3=0, R4=0, R5=0, RZ=0, SP=0, PC=1}
-INST = Addi(register1=R1, register2=R1, immediate=10) | STATE = {R1=0, R2=0, R3=0, R4=0, R5=0, RZ=0, SP=0, PC=2}
-INST = Lui(register1=R2, immediate=0) | STATE = {R1=10, R2=0, R3=0, R4=0, R5=0, RZ=0, SP=0, PC=3}
-INST = Addi(register1=R2, register2=R2, immediate=10) | STATE = {R1=10, R2=0, R3=0, R4=0, R5=0, RZ=0, SP=0, PC=4}
-INST = Add(register1=R1, register2=R1, register3=R2) | STATE = {R1=10, R2=10, R3=0, R4=0, R5=0, RZ=0, SP=0, PC=5}
-INST = Jalr(register1=RZ, register2=RZ, immediate=1) | STATE = {R1=20, R2=10, R3=0, R4=0, R5=0, RZ=0, SP=0, PC=6}

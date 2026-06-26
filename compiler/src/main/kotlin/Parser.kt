@@ -1,9 +1,8 @@
-// In project/compiler/src/main/kotlin/Parser.kt
 package io.cuttlefish
 
-import java.io.File
+import java.io.*
 
-class Parser(val file: File) {
+class Parser(file: File, val baseAddress: Short) {
     private val text = file.readLines()
     private val symbolTable = mutableMapOf<String, Short>()
 
@@ -22,7 +21,7 @@ class Parser(val file: File) {
         if (symbolTable.containsKey(input)) {
             val targetAddress = symbolTable[input]!!
             return if (isRelative) {
-                // BEQ is PC-Relative: Target - (PC + 1)
+                // BEQ is PC for (tokens in parsedLines) -Relative: Target - (PC + 1)
                 (targetAddress - (currentAddress + 1)).toShort()
             } else {
                 targetAddress
@@ -39,7 +38,7 @@ class Parser(val file: File) {
             noComment.split(Regex("[\\s,]+")).filter { it.isNotEmpty() }
         }.filter { it.isNotEmpty() }
 
-        var addressCounter: Short = 0
+        var addressCounter: Short = baseAddress
         for (tokens in parsedLines) {
             var startIndex = 0
 
@@ -57,12 +56,13 @@ class Parser(val file: File) {
                         val count = tokens[startIndex + 1].toNumber().toInt()
                         addressCounter = (addressCounter + count).toShort()
                     }
+
                     else -> addressCounter++ // Every other instruction and .fill takes 1 word
                 }
             }
         }
 
-        var currentPC: Short = 0
+        var currentPC: Short = baseAddress
         for (tokens in parsedLines) {
             val startIndex = if (tokens[0].endsWith(":")) 1 else 0
 
@@ -78,6 +78,7 @@ class Parser(val file: File) {
                     )
                     currentPC++
                 }
+
                 "addi" -> {
                     val imm = resolveValue(tokens[startIndex + 3], currentPC)
                     instructions += Instruction.Addi(
@@ -87,6 +88,7 @@ class Parser(val file: File) {
                     )
                     currentPC++
                 }
+
                 "nand" -> {
                     instructions += Instruction.Nand(
                         register1 = tokens[startIndex + 1].toRegisterType(),
@@ -95,6 +97,7 @@ class Parser(val file: File) {
                     )
                     currentPC++
                 }
+
                 "lui" -> {
                     val imm = resolveValue(tokens[startIndex + 2], currentPC)
                     instructions += Instruction.Lui(
@@ -103,6 +106,7 @@ class Parser(val file: File) {
                     )
                     currentPC++
                 }
+
                 "lw" -> {
                     val imm = resolveValue(tokens[startIndex + 3], currentPC)
                     instructions += Instruction.Lw(
@@ -112,6 +116,7 @@ class Parser(val file: File) {
                     )
                     currentPC++
                 }
+
                 "sw" -> {
                     val imm = resolveValue(tokens[startIndex + 3], currentPC)
                     instructions += Instruction.Sw(
@@ -121,6 +126,7 @@ class Parser(val file: File) {
                     )
                     currentPC++
                 }
+
                 "beq" -> {
                     val imm = resolveValue(tokens[startIndex + 3], currentPC, isRelative = true)
                     instructions += Instruction.Beq(
@@ -130,9 +136,13 @@ class Parser(val file: File) {
                     )
                     currentPC++
                 }
+
                 "jalr" -> {
                     // Jalr can have an immediate for Syscalls, or default to 0
-                    val imm = if (startIndex + 3 < tokens.size) resolveValue(tokens[startIndex + 3], currentPC) else 0.toShort()
+                    val imm = if (startIndex + 3 < tokens.size) resolveValue(
+                        tokens[startIndex + 3],
+                        currentPC
+                    ) else 0.toShort()
                     instructions += Instruction.Jalr(
                         register1 = tokens[startIndex + 1].toRegisterType(),
                         register2 = tokens[startIndex + 2].toRegisterType(),
@@ -146,10 +156,12 @@ class Parser(val file: File) {
                     instructions += Instruction.Add(RegisterType.R0, RegisterType.R0, RegisterType.R0)
                     currentPC++
                 }
+
                 "halt" -> {
                     instructions += Instruction.Jalr(RegisterType.R0, RegisterType.R0, immediate = 1)
                     currentPC++
                 }
+
                 "lli" -> {
                     val imm = resolveValue(tokens[startIndex + 2], currentPC)
                     val maskedImm = (imm.toInt() and 0x3F).toShort() // Bottom 6 bits
@@ -160,6 +172,7 @@ class Parser(val file: File) {
                     )
                     currentPC++
                 }
+
                 "movi" -> {
                     val imm = resolveValue(tokens[startIndex + 2], currentPC)
                     val luiPart = (imm.toInt() shr 6).toShort() // Top 10 bits
@@ -176,6 +189,7 @@ class Parser(val file: File) {
                     instructions += Instruction.DataWord(value)
                     currentPC++
                 }
+
                 ".space" -> {
                     val count = resolveValue(tokens[startIndex + 1], currentPC).toInt()
                     repeat(count) {

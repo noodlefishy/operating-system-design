@@ -19,6 +19,7 @@ dependencies {
     testImplementation(kotlin("test"))
 }
 application {
+    applicationDefaultJvmArgs = listOf()
     mainClass.set("io.cuttlefish.MainKt") // Tells gradle where your main() function is
 }
 
