@@ -2,7 +2,8 @@ package io.cuttlefish
 
 import io.cuttlefish.backend.*
 import io.cuttlefish.components.*
-import io.cuttlefish.components.devices.*
+import io.cuttlefish.components.devices.Console
+import io.cuttlefish.components.devices.DisplayDevice
 import io.cuttlefish.linking.*
 import java.io.*
 import kotlin.system.*
@@ -42,7 +43,7 @@ suspend fun main(args: Array<String>) {
             val machineCode = backend.encode(parse)
 
             val memory = MemoryBus(
-                PhysicalMemory(), DisplayDevice()
+                PhysicalMemory(), Console()
             )
             for ((index, word) in machineCode.withIndex()) {
                 memory.write(index.toShort(), word.toShort())
@@ -56,7 +57,7 @@ suspend fun main(args: Array<String>) {
         "-r" -> {
             val machineCode = File(args[1]).readLines().map { it.toUShort() }
             val memory = MemoryBus(
-                PhysicalMemory(), DisplayDevice()
+                PhysicalMemory(), Console()
             )
             for ((index, word) in machineCode.withIndex()) {
                 memory.write(index.toShort(), word.toShort())
@@ -72,7 +73,7 @@ suspend fun main(args: Array<String>) {
             val mainFile = File(args[2])   // main.kar
             val kernelCode = Backend().encode(Parser(kernelFile, 0x0000.toShort()).decode())
             val mainCode = Backend().encode(Parser(mainFile, MemoryMapRanges.userLandRange.first.toShort()).decode())
-            val memory = MemoryBus(PhysicalMemory(65536), DisplayDevice())
+            val memory = MemoryBus(PhysicalMemory(65536), Console())
             // Flash Kernel into 0x0000+
             kernelCode.forEachIndexed { i, word -> memory.write(i.toShort(), word.toShort()) }
             // Flash Main into 0x1000+
