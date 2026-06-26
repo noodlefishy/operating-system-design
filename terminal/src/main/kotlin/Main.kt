@@ -1,9 +1,9 @@
 package io.cuttlefish
 
-import io.cuttlefish.backend.Backend
+import io.cuttlefish.backend.*
 import io.cuttlefish.components.*
 import io.cuttlefish.components.devices.*
-import java.io.File
+import java.io.*
 
 suspend fun main() {
     val parser = Parser(File("main.kar"))
@@ -11,6 +11,9 @@ suspend fun main() {
 
     val backend = Backend()
     val machineCode = backend.encode(instructions)
+//    println(machineCode)
+//    println(backend.decode(machineCode).joinToString())
+
 
     val memory = MemoryBus(
         PhysicalMemory(1024),
