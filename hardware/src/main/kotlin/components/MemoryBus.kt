@@ -8,7 +8,7 @@ class MemoryBus(val ram: PhysicalMemory, val display: DisplayDevice) : MemoryMan
 
 
     override suspend fun read(address: Short): Short {
-        return when (address and 0xFFFF.toShort()) {
+        return when (address.toUShort().toInt()) {
             in MemoryMapRanges.vectorRange -> ram.read(address)
             in MemoryMapRanges.kernalRange -> ram.read(address)
             in MemoryMapRanges.userLandRange -> ram.read(address)
@@ -18,11 +18,11 @@ class MemoryBus(val ram: PhysicalMemory, val display: DisplayDevice) : MemoryMan
     }
 
     override suspend fun write(address: Short, value: Short) {
-        when (address and 0xFFFF.toShort()) {
+        when (address.toUShort().toInt()) {
             in MemoryMapRanges.vectorRange -> ram.write(address, value)
             in MemoryMapRanges.kernalRange -> ram.write(address, value)
             in MemoryMapRanges.userLandRange -> ram.write(address, value)
-            in MemoryMapRanges.mmioRange -> display.write(address, value)
+            in MemoryMapRanges.mmioRange -> Console().write(address, value)
             else -> error("Unknown addresses?")
         }
     }

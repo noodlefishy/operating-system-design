@@ -1,3 +1,8 @@
 
+movi r2 string
+lw r1 r2 0
+syscall 2
 
 halt
+
+string: .fill 107
