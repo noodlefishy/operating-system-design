@@ -9,6 +9,7 @@ import java.io.*
 import kotlin.system.*
 
 suspend fun main(args: Array<String>) {
+    // yes
     if (args.isEmpty()) {
         println(
             $$"""
