@@ -23,7 +23,7 @@ suspend fun main(args: Array<String>) {
     val file = File(args[1])
     when (args[0]) { // flag
         "-c" -> {
-            val parse = Parser(file).decode()
+            val parse = Parser(file, 0).decode()
             val backend = Backend()
             val machineCode = backend.encode(parse)
             if (args[2] == "-o") machineCode.forEach { File(args[3]).appendText(it.toString()) }
@@ -31,12 +31,12 @@ suspend fun main(args: Array<String>) {
         }
 
         "-i" -> {
-            val parse = Parser(file).decode()
+            val parse = Parser(file, 0).decode() // TODO, make 0 base intentional
             val backend = Backend()
             val machineCode = backend.encode(parse)
 
             val memory = MemoryBus(
-                PhysicalMemory(1024), DisplayDevice()
+                PhysicalMemory(), DisplayDevice()
             )
             for ((index, word) in machineCode.withIndex()) {
                 memory.write(index.toShort(), word.toShort())
@@ -50,7 +50,7 @@ suspend fun main(args: Array<String>) {
         "-r" -> {
             val machineCode = File(args[1]).readLines().map { it.toUShort() }
             val memory = MemoryBus(
-                PhysicalMemory(1024), DisplayDevice()
+                PhysicalMemory(), DisplayDevice()
             )
             for ((index, word) in machineCode.withIndex()) {
                 memory.write(index.toShort(), word.toShort())
@@ -60,32 +60,25 @@ suspend fun main(args: Array<String>) {
                 cpu.tick()
             }
         }
+
+        "-os" -> {
+            val kernelFile = File(args[1]) // kernel.kar
+            val mainFile = File(args[2])   // main.kar
+            val kernelCode = Backend().encode(Parser(kernelFile, 0x0000.toShort()).decode())
+            val mainCode = Backend().encode(Parser(mainFile, 0x1000.toShort()).decode())
+            val memory = MemoryBus(PhysicalMemory(65536), DisplayDevice())
+            // Flash Kernel into 0x0000+
+            kernelCode.forEachIndexed { i, word -> memory.write(i.toShort(), word.toShort()) }
+            // Flash Main into 0x1000+
+            mainCode.forEachIndexed { i, word ->
+                memory.write(
+                    (MemoryMapRanges.userLandRange.first + i).toShort(), word.toShort()
+                )
+            }
+            val cpu = Cpu(memory)
+            while (!cpu.isHalted) {
+                cpu.tick()
+            }
+        }
     }
 }
-
-
-//suspend fun main() {
-//    val parser = Parser(File("main.kar"))
-//    val instructions = parser.decode()
-//
-//    val backend = Backend()
-//    val machineCode = backend.encode(instructions)
-//    println(machineCode)
-////    backend.decode(machineCode).forEach(::println)
-//
-//    val memory = MemoryBus(
-//        PhysicalMemory(1024),
-//        DisplayDevice()
-//    )
-//
-//    for ((index, word) in machineCode.withIndex()) {
-//        memory.write(index.toShort(), word.toShort())
-//    }
-//
-//    val cpu = Cpu(memory)
-//
-//    while (!cpu.isHalted) {
-//        cpu.tick()
-//    }
-//    println(cpu.registers)
-//}
