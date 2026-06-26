@@ -23,6 +23,12 @@ suspend fun main(args: Array<String>) {
     }
     val file = File(args[1])
     when (args[0]) { // flag
+        "-t" -> {
+            val parse = Parser(file, 0).decode()
+            parse.forEachIndexed { index, instruction -> println("$index | $instruction") }
+        }
+
+
         "-c" -> {
             val parse = Parser(file, 0).decode()
             val backend = Backend()

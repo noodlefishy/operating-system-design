@@ -65,7 +65,6 @@ class Parser(file: File, val baseAddress: Short) {
         var currentPC: Short = baseAddress
         for (tokens in parsedLines) {
             val startIndex = if (tokens[0].endsWith(":")) 1 else 0
-
             // If the line was *only* a label with nothing else, skip generation
             if (startIndex >= tokens.size) continue
 
