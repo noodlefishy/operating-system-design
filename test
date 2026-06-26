@@ -1,0 +1,42 @@
+
+lui R1 0
+addi R1 R1 5
+lui R2 0
+addi R2 R2 10
+lui R5 192
+addi R5 R5 9
+jalr R7 R5 0
+jalr R0 R0 1
+add R0 R0 R0
+add R1 R1 R2
+jalr R0 R7 0
+
+---
+
+add R0 R0 R0
+add R0 R0 R0
+add R0 R0 R0
+lui R6 0
+addi R6 R6 0
+beq R0 R0 0
+lui R1 0
+addi R1 R1 10
+lui R2 10
+addi R2 R2 60
+lui R7 0
+addi R7 R7 14
+jalr R7 R7 0
+jalr R0 R0 1
+sw R4 R6 0
+addi R6 R6 1
+lui R3 0
+addi R3 R3 0
+lui R4 0
+addi R4 R4 0
+addi R4 R4 1
+add R3 R3 R2
+beq R4 R1 1
+beq R0 R0 -4
+lw R4 R6 0
+addi R6 R6 -1
+jalr R0 R7 0

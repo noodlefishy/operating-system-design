@@ -24,6 +24,22 @@ suspend fun main(args: Array<String>) {
 
 
     when (args.firstOrNull()) {
+
+        "-i" -> {
+            val parse = Parser(File(args[1]), 0).decode()
+            val backend = Backend()
+            val code = backend.encode(parse)
+            val memory = MemoryBus(PhysicalMemory(), Console())
+            for ((index, word) in code.withIndex()) {
+                memory.write(index.toShort(), word.toShort())
+            }
+            val cpu = Cpu(mmu = memory)
+            while (!cpu.isHalted) {
+                cpu.tick()
+            }
+        }
+
+
         "-w" -> {
             val parse = Parser(File(args[1]), 0).decode()
             val backend = Backend()
@@ -37,9 +53,9 @@ suspend fun main(args: Array<String>) {
         "-r" -> {
             val code = File(args[1]).readLines().map { it.toUShort() }
 
-
             val memory = MemoryBus(PhysicalMemory(), Console())
             for ((index, word) in code.withIndex()) {
+                println(Backend().decode(word))
                 memory.write(index.toShort(), word.toShort())
             }
             val cpu = Cpu(
