@@ -4,18 +4,29 @@ import io.cuttlefish.backend.*
 import io.cuttlefish.components.*
 import io.cuttlefish.components.devices.*
 import java.io.*
+import kotlin.system.*
 
 // lc -c $file -o $out (compile)
 // lc -i $file (compile + run)
 // lc -r $file (run)
 suspend fun main(args: Array<String>) {
-    val file = File(args[2])
-    when (args[1]) { // flag
+    if (args.isEmpty()) {
+        println(
+            $$"""
+            [USAGE] lc -c $file -o $out (compile)
+            [USAGE] lc -i $file (compile + run)
+            [USAGE] lc -r $file (run)
+        """.trimIndent()
+        )
+        exitProcess(0)
+    }
+    val file = File(args[1])
+    when (args[0]) { // flag
         "-c" -> {
             val parse = Parser(file).decode()
             val backend = Backend()
             val machineCode = backend.encode(parse)
-            if (args[3] == "-o") machineCode.forEach { File(args[4]).appendText(it.toString()) }
+            if (args[2] == "-o") machineCode.forEach { File(args[3]).appendText(it.toString()) }
             else machineCode.forEach { File(file.nameWithoutExtension).appendText(it.toString()) }
         }
 
@@ -37,7 +48,7 @@ suspend fun main(args: Array<String>) {
         }
 
         "-r" -> {
-            val machineCode = File(args[2]).readLines().map { it.toUShort() }
+            val machineCode = File(args[1]).readLines().map { it.toUShort() }
             val memory = MemoryBus(
                 PhysicalMemory(1024), DisplayDevice()
             )
