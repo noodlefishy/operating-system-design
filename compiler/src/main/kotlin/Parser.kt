@@ -1,10 +1,23 @@
 package io.cuttlefish
 
+import io.cuttlefish.linking.*
 import java.io.*
 
 class Parser(file: File, val baseAddress: Short) {
     private val text = file.readLines()
     val symbolTable = mutableMapOf<String, Short>()
+
+    val imports = mutableListOf<String>()
+    val relocations = mutableListOf<RelocationTable>()
+
+
+    private fun String.isNumber(): Boolean {
+        return try {
+            this.toNumber(); true
+        } catch (_: Exception) {
+            false
+        }
+    }
 
     private fun String.toNumber(): Short {
         val intVal = when {
@@ -17,7 +30,9 @@ class Parser(file: File, val baseAddress: Short) {
         return intVal.toShort()
     }
 
-    private fun resolveValue(input: String, currentAddress: Short, isRelative: Boolean = false): Short {
+    private fun resolveValue(
+        input: String, currentAddress: Short, isRelative: Boolean = false, type: RelocationType
+    ): Short {
         if (symbolTable.containsKey(input)) {
             val targetAddress = symbolTable[input]!!
             return if (isRelative) {
@@ -27,7 +42,13 @@ class Parser(file: File, val baseAddress: Short) {
                 targetAddress
             }
         }
-        return input.toNumber()
+        if (input.isNumber()) return input.toNumber()
+
+        imports += input
+        relocations += RelocationTable(currentAddress.toUShort(), input, type)
+
+        return 0x0000
+
     }
 
     fun decode(): List<Instruction> {
