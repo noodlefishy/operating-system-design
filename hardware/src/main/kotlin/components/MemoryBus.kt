@@ -1,8 +1,6 @@
 package io.cuttlefish.components
-
 import io.cuttlefish.*
 import io.cuttlefish.components.devices.*
-import kotlin.experimental.*
 
 class MemoryBus(val ram: PhysicalMemory, val display: DisplayDevice) : MemoryManagement {
 
