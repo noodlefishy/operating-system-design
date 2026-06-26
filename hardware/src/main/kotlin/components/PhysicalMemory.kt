@@ -1,9 +1,9 @@
 package io.cuttlefish.components
 
 import io.cuttlefish.*
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.*
 
-class PhysicalMemory(val size: Int = 65_536) : MemoryManagement {
+class PhysicalMemory(size: Int = 65_536) : MemoryManagement {
     private val internals: ShortArray = ShortArray(size) { 0 }
     override suspend fun read(address: Short): Short {
         delay(Clock.MEMORY_READ_TIME)

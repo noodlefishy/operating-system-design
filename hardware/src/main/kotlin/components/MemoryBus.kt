@@ -2,12 +2,13 @@ package io.cuttlefish.components
 
 import io.cuttlefish.*
 import io.cuttlefish.components.devices.*
+import kotlin.experimental.*
 
 class MemoryBus(val ram: PhysicalMemory, val display: DisplayDevice) : MemoryManagement {
 
 
     override suspend fun read(address: Short): Short {
-        return when (address) {
+        return when (address and 0xFFFF.toShort()) {
             in MemoryMapRanges.vectorRange -> ram.read(address)
             in MemoryMapRanges.kernalRange -> ram.read(address)
             in MemoryMapRanges.userLandRange -> ram.read(address)
@@ -18,7 +19,7 @@ class MemoryBus(val ram: PhysicalMemory, val display: DisplayDevice) : MemoryMan
     }
 
     override suspend fun write(address: Short, value: Short) {
-        when (address) {
+        when (address and 0xFFFF.toShort()) {
             in MemoryMapRanges.vectorRange -> ram.write(address, value)
             in MemoryMapRanges.kernalRange -> ram.write(address, value)
             in MemoryMapRanges.userLandRange -> ram.write(address, value)
