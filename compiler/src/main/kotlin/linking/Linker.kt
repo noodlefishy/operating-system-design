@@ -76,9 +76,10 @@ class Linker(vararg objectFiles: ObjectFile, baseAddress: UShort = 0x3000u) {
     }
 
 
-    private fun allocateOutputBuffer() {
-        val arraySize = objects.map { it.payload.size }.fold(0) { acc, i -> acc + i }
-        println(arraySize)
+    private fun allocateOutputBuffer() = objects.map { it.payload.size }.fold(0) { acc, i -> acc + i }
+
+    private fun copyRawPayloads() {
+        for (file in groupedByFile) {}
     }
 
     fun passTwo(segments: Map<String, UShort>) {
