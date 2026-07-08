@@ -1,4 +1,4 @@
-import java.nio.file.Files.createSymbolicLink
+import java.nio.file.Files
 
 plugins {
     kotlin("jvm")
@@ -18,43 +18,48 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.1")
     testImplementation(kotlin("test"))
 }
+
 application {
-    applicationDefaultJvmArgs = listOf()
     applicationName = "lx"
-    mainClass.set("io.cuttlefish.MainKt") // Tells gradle where your main() function is
+    mainClass.set("io.cuttlefish.MainKt")
 }
 
-
-val createSymlink= tasks.register("createSymlink") {
+val createSymlink = tasks.register("createSymlink") {
     description = "Creates a symlink from the project root to the installDist executable"
     group = "distribution"
 
-    // We depend on installDist because that's what creates the bin/lx file
     dependsOn(tasks.named("installDist"))
 
+    val isWindows = System.getProperty("os.name").lowercase().contains("win")
+    val executableName = if (isWindows) "lx.bat" else "lx"
+
+    val targetFileProvider = layout.buildDirectory.file("install/lx/bin/$executableName")
+    val linkFileProvider = rootProject.layout.projectDirectory.file(executableName)
+
+    // Inputs/Outputs for Gradle up-to-date checking
+    inputs.file(targetFileProvider)
+    outputs.file(linkFileProvider)
+
     doLast {
-        val isWindows = System.getProperty("os.name").lowercase().contains("win")
-        val executableName = if (isWindows) "lx.bat" else "lx"
+        val target = targetFileProvider.get().asFile.toPath()
+        val link = linkFileProvider.asFile.toPath()
 
-        val targetFile = layout.buildDirectory.file("install/lx/bin/$executableName").get().asFile
-        val linkFile = rootProject.file(executableName)
-
-        if (linkFile.exists()) linkFile.delete()
+        if (Files.exists(link)) Files.delete(link)
 
         try {
-            createSymbolicLink(linkFile.toPath(), targetFile.toPath())
-            logger.lifecycle("Symlink created: ${linkFile.absolutePath} -> ${targetFile.absolutePath}")
+            Files.createSymbolicLink(link, target)
+            println("Symlink created: $link -> $target")
         } catch (e: Exception) {
-            logger.error("Failed to create symlink: ${e.message}")
+            try {
+                Files.copy(target, link)
+                println("Symlink failed; copied executable instead: $link")
+            } catch (copyEx: Exception) {
+                throw RuntimeException("Could not create link or copy file: ${e.message}")
+            }
         }
     }
-}
+}!!
 
 tasks.named("installDist") {
     finalizedBy(createSymlink)
-}
-
-
-tasks.test {
-    useJUnitPlatform()
 }
