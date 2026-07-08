@@ -1,5 +1,6 @@
 package io.cuttlefish.linking
 
+import io.cuttlefish.backend.Backend
 import kotlinx.serialization.*
 import kotlinx.serialization.json.*
 import java.io.*
@@ -22,6 +23,7 @@ class Linker(vararg objectFiles: ObjectFile, baseAddress: UShort = 0x3000u) {
             fileBaseAddresses[file.key] = currentAddress
             currentAddress = (currentAddress + file.value.payload.size.toUShort()).toUShort()
         }
+        println("FBA -> $fileBaseAddresses")
         return fileBaseAddresses
     }
 
@@ -92,9 +94,12 @@ class Linker(vararg objectFiles: ObjectFile, baseAddress: UShort = 0x3000u) {
 
 
     fun passTwo(segments: Map<String, UShort>) {
+        val relocationTable = objects.flatMap { it.relocationTable }
+        println("RT $relocationTable")
+        // inst_addr = file_base_address[file] + relocation.offset
         val emptyOutPutBuffer = allocateOutputBuffer()
         val buffer = copyRawPayloads(emptyOutPutBuffer)
-        println(buffer.joinToString("\n"))
+//        println(buffer.joinToString("\n"))
     }
 
 }
@@ -117,3 +122,5 @@ fun main() {
     val p2 = linker.passTwo(p1)
 
 }
+// FBA main  = 12288
+// FBA maths = 12297
