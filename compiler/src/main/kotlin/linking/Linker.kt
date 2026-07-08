@@ -1,7 +1,8 @@
-package io.cuttlefish.linking
-
+import io.cuttlefish.*
+import io.cuttlefish.backend.*
 import io.cuttlefish.components.*
 import io.cuttlefish.components.devices.*
+import io.cuttlefish.linking.*
 import kotlinx.serialization.*
 import kotlinx.serialization.json.*
 import java.io.*
@@ -18,11 +19,10 @@ class Linker(vararg objectFiles: ObjectFile, baseAddress: UShort = 0x3000u) {
     }
 
     val groupedByFile = objects.groupBy { File(it.header.fileName) }.map { it.key to it.value.first() }.toMap()
-    val mainF = getMainFile()
 
     private fun assignLayout(): Map<File, UShort> {
+        currentAddress = (currentAddress + 3u).toUShort() // Reserve 3 words space for the bootstrap instructions
         for (file in groupedByFile) {
-//            println("${file.key.nameWithoutExtension} lives at $currentAddress")
             fileBaseAddresses[file.key] = currentAddress
             currentAddress = (currentAddress + file.value.payload.size.toUShort()).toUShort()
         }
@@ -33,14 +33,13 @@ class Linker(vararg objectFiles: ObjectFile, baseAddress: UShort = 0x3000u) {
         val global: MutableMap<String, UShort> = mutableMapOf()
         for ((file: File, objectFile: ObjectFile) in groupedByFile) {
             for (symbol in objectFile.symbolTables) {
-                global[symbol.name] = assignedLayout[file]!!
+                // Ignore imports so we don't accidentally overwrite the true address with the importer's layout address
                 if (symbol.type == SymbolType.Import) continue
                 global[symbol.name] = (assignedLayout[file]!! + symbol.offset).toUShort()
             }
         }
         return global
     }
-
 
     fun passOne(): Map<String, UShort> {
         val layout = assignLayout()
@@ -49,28 +48,31 @@ class Linker(vararg objectFiles: ObjectFile, baseAddress: UShort = 0x3000u) {
     }
 
     private fun checkDuplicates() {
-        val combined = mutableSetOf<String>()
         val totalObjectsWithoutFiles = objects.flatMap { it.symbolTables }
-        if (totalObjectsWithoutFiles.none { it.name == "main" }) throw IllegalStateException($$$$$$$$$$$"Incorrect main function configuration ${}")
-        if (totalObjectsWithoutFiles.filter { it.name == "main" }.size != 1 && totalObjectsWithoutFiles.filter { it.name == "main" }[0].type == SymbolType.Export) {
+
+        val mainExports =
+            totalObjectsWithoutFiles.filter { (it.name == "main" || it.name == "_start") && it.type == SymbolType.Export }
+        if (mainExports.size != 1) {
             throw IllegalStateException($$$$$$$$$$$"Incorrect main function configuration ${}")
             // multi dollar interpolation is just an ahh feature
             // This was picked over union types 💔
         }
-        for (symbol in objects.flatMap { it.symbolTables }) {
-            val embedName = "${if (symbol.type == SymbolType.Export) "e" else "i"}${symbol.name}"
-            if (embedName !in combined) {
-                combined += embedName
-            } else throw IllegalStateException("Duplicate Symbol ${symbol.name}")
+
+        val exportedSymbols = mutableSetOf<String>()
+        for (symbol in totalObjectsWithoutFiles) {
+            if (symbol.type == SymbolType.Export) {
+                if (symbol.name in exportedSymbols) {
+                    throw IllegalStateException("Duplicate Symbol ${symbol.name}")
+                }
+                exportedSymbols.add(symbol.name)
+            }
         }
     }
 
     private fun getMainFile(): File {
-        val grouped = groupedByFile
-
-        for ((file, objectFile) in grouped.entries) {
+        for ((file, objectFile) in groupedByFile) {
             objectFile.symbolTables.forEach { symbol ->
-                if (symbol.type == SymbolType.Export && symbol.name == "main") {
+                if (symbol.type == SymbolType.Export && (symbol.name == "main" || symbol.name == "_start")) {
                     return file
                 }
             }
@@ -78,13 +80,12 @@ class Linker(vararg objectFiles: ObjectFile, baseAddress: UShort = 0x3000u) {
         throw IllegalStateException($$$$$$$$$$$"Incorrect main function configuration ${}")
     }
 
-
     private fun allocateOutputBuffer() =
-        Array<UShort>(objects.map { it.payload.size }.fold(0) { acc, i -> acc + i }) { 0xFFFFu }
+        Array<UShort>(3 + objects.map { it.payload.size }.fold(0) { acc, i -> acc + i }) { 0xFFFFu }
 
     // Warning! `copyRawPayloads` depends on the labels to be in the right order for everything to work out
     private fun copyRawPayloads(buffer: Array<UShort>): Array<UShort> {
-        var arrayPointer = 0
+        var arrayPointer = 3 // Start copying after the bootstrap sequence
         for (obj in groupedByFile.values) {
             for (byte in obj.payload) {
                 buffer[arrayPointer] = byte
@@ -98,62 +99,85 @@ class Linker(vararg objectFiles: ObjectFile, baseAddress: UShort = 0x3000u) {
         buffer: Array<UShort>, labelAddresses: Map<String, UShort>
     ) {
         for ((file, obj) in groupedByFile) {
-            val fileBaseAddress =
-                fileBaseAddresses[file] ?: throw IllegalStateException("File layout not assigned for ${file.name} in ${fileBaseAddresses}")
+            val fileBaseAddress = fileBaseAddresses[file]
+                ?: throw IllegalStateException("File layout not assigned for ${file.name} in ${fileBaseAddresses}")
             for (relocatable in obj.relocationTable) { // O(n^2) type shit
-                val targetAbsoluteAddress = labelAddresses[relocatable.name]!!.toInt()
+                val targetAbsoluteAddress = labelAddresses[relocatable.name]
+                    ?: throw IllegalStateException("Unresolved External Symbol Error: ${relocatable.name}")
                 val instructionAbsoluteAddress = fileBaseAddress + relocatable.offset
                 val indexInBuffer = instructionAbsoluteAddress - startAddress
                 val instruction = buffer[indexInBuffer.toInt()]
 
                 val patchedInstruction = when (relocatable.type) {
+                    RelocationType.ABS_16 -> {
+                        targetAbsoluteAddress
+                    }
+
                     RelocationType.ABS_LUI -> {
-                        val top10 = (targetAbsoluteAddress ushr 6).toUInt() and 0x3FFu
-                        (instruction.toUInt() or top10).toUShort()
+                        val top10 = ((targetAbsoluteAddress.toInt() ushr 6) and 0x3FF).toUShort()
+                        instruction or top10
                     }
 
                     RelocationType.ABS_LLI -> {
-                        val bottom6: UShort = (targetAbsoluteAddress.toUInt() and 0x3Fu).toUShort()
+                        val bottom6 = (targetAbsoluteAddress.toInt() and 0x3F).toUShort()
                         instruction or bottom6
                     }
 
-                    else -> throw IllegalStateException("Unknown relocation type ${relocatable.type}")
-
+                    RelocationType.REL_7 -> {
+                        val offset = targetAbsoluteAddress.toInt() - (instructionAbsoluteAddress.toInt() + 1)
+                        if (offset !in -64..63) {
+                            throw IllegalStateException("Branch Target Out of Range Error: $offset")
+                        }
+                        val bottom7 = (offset and 0x7F).toUShort()
+                        instruction or bottom7
+                    }
                 }
                 buffer[indexInBuffer.toInt()] = patchedInstruction
 
             }
         }
-
     }
-
-    /**
-     * SGM -> {main=12288, useless=12296, math_add=12297}
-     * BFR -> [Lkotlin.UShort;@cd2dae5
-     * RLT -> [RelocationTable(offset=4, name=math_add, type=ABS_LUI), RelocationTable(offset=5, name=math_add, type=ABS_LLI)]
-     */
-
 
     fun passTwo(labelAddresses: Map<String, UShort>): Array<UShort> {
-//        println("RT $relocationTable")
         val emptyOutPutBuffer = allocateOutputBuffer()
         val buffer = copyRawPayloads(emptyOutPutBuffer)
-//        println(buffer.joinToString("\n"))
         relocation(buffer, labelAddresses)
+
+        val mainAddr = labelAddresses["main"] ?: labelAddresses["_start"]
+        ?: throw IllegalStateException("main or _start symbol not found")
+        val backend = Backend()
+
+        // A way to start main or _start
+
+        // 1. LUI R7, (mainAddr >> 6)
+        val lui = backend.encode(listOf(Instruction.Lui(RegisterType.R7, (mainAddr.toInt() ushr 6).toShort())))[0]
+        // 2. ADDI R7, R7, (mainAddr & 0x3F)
+        val addi = backend.encode(
+            listOf(
+                Instruction.Addi(
+                    RegisterType.R7, RegisterType.R7, (mainAddr.toInt() and 0x3F).toShort()
+                )
+            )
+        )[0]
+        // 3. JALR R0, R7, 0
+        val jalr = backend.encode(listOf(Instruction.Jalr(RegisterType.R0, RegisterType.R7, 0)))[0]
+
+        buffer[0] = lui
+        buffer[1] = addi
+        buffer[2] = jalr
+
         return buffer
     }
-
 }
 
 val mainFsL = File("/Users/leuw/dev/kotlin/Operating-System/linking tests/main.kar")
 val mathsFsL = File("/Users/leuw/dev/kotlin/Operating-System/linking tests/maths.kar")
 
-
 suspend fun main() {
     val mainO = ObjectExcreter(mainFsL).generate()
     val mathsO = ObjectExcreter(mathsFsL).generate()
     val j = Json { prettyPrint = true }
-//    println(mainFsL.absolutePath)
+
     File("${mainFsL.absolutePath}.json").writeText(j.encodeToString(mainO))
     File("${mathsFsL.absolutePath}.json").writeText(j.encodeToString(mathsO))
 
@@ -171,8 +195,4 @@ suspend fun main() {
     while (!cpu.isHalted) {
         cpu.tick()
     }
-
-
 }
-// FBA main  = 12288
-// FBA maths = 12297
