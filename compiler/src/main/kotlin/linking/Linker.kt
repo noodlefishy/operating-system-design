@@ -1,6 +1,5 @@
 package io.cuttlefish.linking
 
-import io.cuttlefish.backend.Backend
 import kotlinx.serialization.*
 import kotlinx.serialization.json.*
 import java.io.*
@@ -92,14 +91,38 @@ class Linker(vararg objectFiles: ObjectFile, baseAddress: UShort = 0x3000u) {
         return buffer
     }
 
-
-    fun passTwo(segments: Map<String, UShort>) {
-        val relocationTable = objects.flatMap { it.relocationTable }
-        println("RT $relocationTable")
+    private fun relocation(
+        relocationTable: List<RelocationTable>,
+        buffer: Array<UShort>,
+        labelAddresses: Map<String, UShort>
+    ) {
         // inst_addr = file_base_address[file] + relocation.offset
+        for (relocatable in relocationTable) {
+            val label = relocatable.name
+            val spot = labelAddresses[relocatable.name]
+                ?: throw IllegalStateException("Label oopsie ${relocatable.name} !in $labelAddresses")
+
+            // assuming it follows LUI then LLI(ADDI)
+
+        }
+    }
+
+    /**
+     * SGM -> {main=12288, useless=12296, math_add=12297}
+     * BFR -> [Lkotlin.UShort;@cd2dae5
+     * RLT -> [RelocationTable(offset=4, name=math_add, type=ABS_LUI), RelocationTable(offset=5, name=math_add, type=ABS_LLI)]
+     */
+
+
+    fun passTwo(labelAddresses: Map<String, UShort>) {
+        val relocationTable = objects.flatMap { it.relocationTable }
+//        println("RT $relocationTable")
         val emptyOutPutBuffer = allocateOutputBuffer()
         val buffer = copyRawPayloads(emptyOutPutBuffer)
 //        println(buffer.joinToString("\n"))
+        println("SGM -> $labelAddresses\nBFR -> $buffer\nRLT -> $relocationTable")
+        relocation(relocationTable, buffer, labelAddresses)
+
     }
 
 }
