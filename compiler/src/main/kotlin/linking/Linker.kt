@@ -1,5 +1,6 @@
 package io.cuttlefish.linking
 
+import jdk.internal.foreign.abi.Binding.baseAddress
 import kotlinx.serialization.*
 import kotlinx.serialization.json.*
 import java.io.*
@@ -74,6 +75,16 @@ class Linker(vararg objectFiles: ObjectFile, baseAddress: UShort = 0x3000u) {
         throw IllegalStateException($$$$$$$$$$$"Incorrect main function configuration ${}")
     }
 
+
+    private fun allocateOutputBuffer() {
+        val arraySize = objects.map { it.payload.size }.fold(0) { acc, i -> acc + i }
+        println(arraySize)
+    }
+
+    fun passTwo(segments: Map<String, UShort>) {
+        val outputBuffer = allocateOutputBuffer()
+    }
+
 }
 
 val mainFsL = File("/Users/leuw/dev/kotlin/Operating-System/linking tests/main.kar")
@@ -84,10 +95,13 @@ fun main() {
     val mainO = ObjectExcreter(mainFsL).generate()
     val mathsO = ObjectExcreter(mathsFsL).generate()
     val j = Json { prettyPrint = true }
-    File("${mainFsL.nameWithoutExtension}.json").writeText(j.encodeToString(mainO))
-    File("${mathsFsL.nameWithoutExtension}.json").writeText(j.encodeToString(mathsO))
-
+//    println(mainFsL.absolutePath)
+    File("${mainFsL.absolutePath}.json").writeText(j.encodeToString(mainO))
+    File("${mathsFsL.absolutePath}.json").writeText(j.encodeToString(mathsO))
 
     val linker = Linker(mainO, mathsO)
+    val p1 = linker.passOne()
+    println(p1)
+    val p2 = linker.passTwo(p1)
 
 }
