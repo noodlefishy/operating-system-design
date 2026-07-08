@@ -2,12 +2,12 @@ main:    lui R1 0     // 12 288
          addi R1 R1 5 // 12 289
          lui R2 0     // 12 290
          addi R2 R2 10// 12 291
-         lui R5 0     // 12 292 // Math_Add
-         addi R5 R5 0 // 12 293 // Mah_Add
-         jalr R7 R5 0 // 12 294
-         jalr R0 R0 1 // 12 295
-useless: add R0 R0 R0 // 12 296
-math_add:add R1 R1 R2 // 12 297
+         lui R5 0     // 12 292 6 // Math_Add
+         addi R5 R5 0 // 12 293 5 // Mah_Add
+         jalr R7 R5 0 // 12 294 4
+         jalr R0 R0 1 // 12 295 3
+useless: add R0 R0 R0 // 12 296 2
+math_add:add R1 R1 R2 // 12 297 1
          jalr R0 R7 0 // 12 298
 
 
