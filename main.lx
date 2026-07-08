@@ -1,1 +1,1 @@
-stack: .space 3movi r6 stackbeq r0 r0 mainmain:    movi r1 10    movi r2 700    call m_multiply    haltm_multiply:    sw r4 r6 0    addi r6 r6 1    movi r3 0    movi r4 0    m_multiply_loop:        addi r4 r4 1        add r3 r3 r2        beq r4 r1 m_multiply_done        beq r0 r0 m_multiply_loopm_multiply_done:    lw r4 r6 0    addi r6 r6 -1    ret
+stack: .space 3main:    movi r1 10    movi r2 700    call m_multiply    halt

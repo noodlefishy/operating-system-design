@@ -4,11 +4,10 @@ import Linker
 import io.cuttlefish.backend.*
 import io.cuttlefish.components.*
 import io.cuttlefish.components.devices.*
-import io.cuttlefish.config.EmulatorConfig
-import io.cuttlefish.config.GlobalConfig
+import io.cuttlefish.config.*
 import io.cuttlefish.linking.*
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
+import kotlinx.serialization.*
+import kotlinx.serialization.json.*
 import java.io.*
 import kotlin.system.*
 
@@ -24,6 +23,7 @@ fun printUsage() {
           -r     <file.bin>                    Run a pre-compiled machine code file.
           -os    <kernel.lx> <main.lx>         Compile and run an OS kernel with a userland program.
           -t     <file.lx>                     Tokenize and parse a file (prints instructions).
+          -d.    <file.lx>                     Parses and decodes a file.bin (prints instructions).
           -h, --help                           Show this help menu.
           
         Examples:
@@ -49,6 +49,7 @@ suspend fun main(args: Array<String>) {
             "-b" -> handleBuild(remainingArgs)
             "-i" -> handleCompileAndRun(remainingArgs)
             "-r" -> handleRun(remainingArgs)
+            "-d" -> handleDecode(remainingArgs)
             "-os" -> handleRunOs(remainingArgs)
             else -> {
                 System.err.println("[ERROR] Unknown command or flag: $command")
@@ -105,15 +106,15 @@ private fun handleBuild(args: List<String>) {
         val file = getFileOrThrow(path)
         ObjectExcreter(file).generate()
     }
+    val baseAddr = MemoryMapRanges.userLandRange.first // 0x3000
 
-    val linker = Linker(*objects.toTypedArray(), baseAddress = MemoryMapRanges.userLandRange.first.toUShort())
+    val linker = Linker(*objects.toTypedArray(), baseAddress = baseAddr.toUShort())
     val p1 = linker.passOne()
     val finalBinary = linker.passTwo(p1)
 
     val outFile = File(outPath)
-    val baseAddr = MemoryMapRanges.userLandRange.first // 0x3000
     outFile.writeText("@$baseAddr\n" + finalBinary.joinToString("\n"))
-    outFile.writeText(finalBinary.joinToString("\n"))
+//    outFile.writeText(finalBinary.joinToString("\n"))
 }
 
 private suspend fun handleCompileAndRun(args: List<String>) {
@@ -176,6 +177,15 @@ private suspend fun handleRunOs(args: List<String>) {
         cpu.tick()
     }
 }
+
+private fun handleDecode(args: List<String>) {
+    if (args.isEmpty()) throw IllegalArgumentException("Missing input file for -d")
+    val file = getFileOrThrow(args[0])
+
+    val parse = Backend().decode(file.readLines().map { it.toUShort() })
+    parse.forEachIndexed { index, instruction -> println("$index | $instruction") }
+}
+
 
 fun loadConfig() {
     val configFile = File("configurations/Emulator config.json")

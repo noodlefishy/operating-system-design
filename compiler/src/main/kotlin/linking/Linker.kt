@@ -53,6 +53,7 @@ class Linker(vararg objectFiles: ObjectFile, baseAddress: UShort = 0x3000u) {
         val mainExports =
             totalObjectsWithoutFiles.filter { (it.name == "main" || it.name == "_start") && it.type == SymbolType.Export }
         if (mainExports.size != 1) {
+            println(totalObjectsWithoutFiles)
             throw IllegalStateException($$$$$$$$$$$"Incorrect main function configuration ${}")
             // multi dollar interpolation is just an ahh feature
             // This was picked over union types 💔
@@ -75,7 +76,7 @@ class Linker(vararg objectFiles: ObjectFile, baseAddress: UShort = 0x3000u) {
 
     // Warning! `copyRawPayloads` depends on the labels to be in the right order for everything to work out
     private fun copyRawPayloads(buffer: Array<UShort>): Array<UShort> {
-        var arrayPointer = 3 // Start copying after the bootstrap sequence
+        var arrayPointer = 0 // Start copying after the bootstrap sequence
         for (obj in groupedByFile.values) {
             for (byte in obj.payload) {
                 buffer[arrayPointer] = byte
@@ -132,29 +133,6 @@ class Linker(vararg objectFiles: ObjectFile, baseAddress: UShort = 0x3000u) {
         val emptyOutPutBuffer = allocateOutputBuffer()
         val buffer = copyRawPayloads(emptyOutPutBuffer)
         relocation(buffer, labelAddresses)
-
-        val mainAddr = labelAddresses["main"] ?: labelAddresses["_start"]
-        ?: throw IllegalStateException("main or _start symbol not found")
-        val backend = Backend()
-
-        // A way to start main or _start
-
-        // 1. LUI R7, (mainAddr >> 6)
-        val lui = backend.encode(listOf(Instruction.Lui(RegisterType.R7, (mainAddr.toInt() ushr 6).toShort())))[0]
-        // 2. ADDI R7, R7, (mainAddr & 0x3F)
-        val addi = backend.encode(
-            listOf(
-                Instruction.Addi(
-                    RegisterType.R7, RegisterType.R7, (mainAddr.toInt() and 0x3F).toShort()
-                )
-            )
-        )[0]
-        // 3. JALR R0, R7, 0
-        val jalr = backend.encode(listOf(Instruction.Jalr(RegisterType.R0, RegisterType.R7, 0)))[0]
-
-        buffer[0] = lui
-        buffer[1] = addi
-        buffer[2] = jalr
 
         return buffer
     }
