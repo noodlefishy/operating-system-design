@@ -15,7 +15,7 @@ fun printUsage() {
         
         Commands:
           -c     <file.lx> [-o <out.bin>]      Compile a single source file to machine code.
-          -b <f1.lx> <f2.lx> [-o <out>]        Compile & link multiple source files into a binary.
+          -b     <f1.lx> <f2.lx> [-o <out>]    Compile & link multiple source files into a binary.
           -i     <file.lx>                     Compile and immediately run a source file.
           -r     <file.bin>                    Run a pre-compiled machine code file.
           -os    <kernel.lx> <main.lx>         Compile and run an OS kernel with a userland program.
