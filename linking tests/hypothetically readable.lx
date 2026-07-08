@@ -1,0 +1,15 @@
+main:
+    movi r1, 5
+    movi r2, 10
+
+    movi r5, math_add // Load address of math_add into R5 (Requires Relocation!)
+    jalr r7, r5, 0    // Jump to R5, save return address to R7
+
+    halt
+
+useless:
+    nop
+
+math_add:
+    add r1, r1, r2  // R1 = R1 + R2
+    jalr r0, r7, 0  // Return (Assumes the caller saved the return address in R7)
