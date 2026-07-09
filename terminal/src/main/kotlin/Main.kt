@@ -10,6 +10,7 @@ import kotlinx.serialization.*
 import kotlinx.serialization.json.*
 import java.io.*
 import kotlin.system.*
+import kotlin.text.toShort
 
 fun printUsage() {
     println(
@@ -181,8 +182,10 @@ private suspend fun handleRunOs(args: List<String>) {
 private fun handleDecode(args: List<String>) {
     if (args.isEmpty()) throw IllegalArgumentException("Missing input file for -d")
     val file = getFileOrThrow(args[0])
+    val linesData = file.readLines()
+    val linesInfo = if (linesData[0].startsWith("@")) linesData.drop(1) else linesData
 
-    val parse = Backend().decode(file.readLines().map { it.toUShort() })
+    val parse = Backend().decode(linesInfo.map { it.toUShort() })
     parse.forEachIndexed { index, instruction -> println("$index | $instruction") }
 }
 
