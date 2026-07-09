@@ -62,7 +62,7 @@ lessThan:
 
 Build the entire toolchain and create a local executable command line tool in your root folder:
 
-### 1. Build the ecosystem
+### 1. Build the Repository
 
 ```bash
 # macOS / Linux:
@@ -84,7 +84,7 @@ memory:
 
 ---
 
-## 📖 Deep-Dive Documentation
+## Documentation
 
 For complete reference guides, calling conventions, hardware specs, and software algorithm tutorials, visit our **GitHub
 Wiki)**. 
