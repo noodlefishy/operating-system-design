@@ -10,7 +10,6 @@ import kotlinx.serialization.*
 import kotlinx.serialization.json.*
 import java.io.*
 import kotlin.system.*
-import kotlin.text.toShort
 
 fun printUsage() {
     println(
@@ -43,26 +42,22 @@ suspend fun main(args: Array<String>) {
     val command = args[0]
     val remainingArgs = args.drop(1)
 
-    try {
-        when (command) {
-            "-t" -> handleTokenize(remainingArgs)
-            "-c" -> handleCompile(remainingArgs)
-            "-b" -> handleBuild(remainingArgs)
-            "-i" -> handleCompileAndRun(remainingArgs)
-            "-r" -> handleRun(remainingArgs)
-            "-d" -> handleDecode(remainingArgs)
-            "-os" -> handleRunOs(remainingArgs)
-            else -> {
-                System.err.println("[ERROR] Unknown command or flag: $command")
-                printUsage()
-                exitProcess(1)
-            }
+    when (command) {
+        "-t" -> handleTokenize(remainingArgs)
+        "-c" -> handleCompile(remainingArgs)
+        "-b" -> handleBuild(remainingArgs)
+        "-i" -> handleCompileAndRun(remainingArgs)
+        "-r" -> handleRun(remainingArgs)
+        "-d" -> handleDecode(remainingArgs)
+        "-os" -> handleRunOs(remainingArgs)
+        else -> {
+            System.err.println("[ERROR] Unknown command or flag: $command")
+            printUsage()
+            exitProcess(1)
         }
-    } catch (e: Exception) {
-        System.err.println("\n[FATAL ERROR] ${e.message}")
-        exitProcess(1)
     }
 }
+
 
 private fun getFileOrThrow(path: String): File {
     val file = File(path)

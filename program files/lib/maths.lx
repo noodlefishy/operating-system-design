@@ -9,7 +9,7 @@ lessThan:
 
     ADD r1, r1, r2
 
-    movi r3, 0x8000
+    movi r3, $SBIT
     NAND r1, r1, r3
 
     NAND r1, r1, r1
