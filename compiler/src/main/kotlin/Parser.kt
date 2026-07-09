@@ -114,7 +114,7 @@ class Parser(file: File, val baseAddress: Short) {
                         register1 = tokens[startIndex + 1].toRegisterType(), register2 = RegisterType.R6, immediate = 0
                     )
                     instructions += Instruction.Addi(
-                        register1 = RegisterType.R6, register2 = RegisterType.R6, immediate = 1
+                        register1 = RegisterType.R6, register2 = RegisterType.R6, immediate = -1
                     )
                     currentPC = (currentPC + 2).toShort()
                 }
@@ -123,7 +123,7 @@ class Parser(file: File, val baseAddress: Short) {
                     // pop rX  addi r6, r6, -1
                     //         lw rX, r6, 0
                     instructions += Instruction.Addi(
-                        register1 = RegisterType.R6, register2 = RegisterType.R6, immediate = -1
+                        register1 = RegisterType.R6, register2 = RegisterType.R6, immediate = 1
                     )
                     instructions += Instruction.Lw(
                         register1 = tokens[startIndex + 1].toRegisterType(), register2 = RegisterType.R6, immediate = 0
