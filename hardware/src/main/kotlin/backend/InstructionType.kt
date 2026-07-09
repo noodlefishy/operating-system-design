@@ -1,6 +1,9 @@
 package io.cuttlefish.backend
 
+/**
+ * Don't touch!
+ */
 enum class InstructionType {
-    Add, Addi, Nand, Lui, Lw, Sw, Beq, Jalr, Nop, Halt, LLi, Movi
+    Add, Addi, Nand, Lui, Lw, Sw, Beq, Jalr
 
 }
