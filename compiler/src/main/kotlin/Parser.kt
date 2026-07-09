@@ -42,11 +42,10 @@ class Parser(file: File, val baseAddress: Short) {
     ): Short {
         if (symbolTable.containsKey(input)) {
             val targetAddress = symbolTable[input]!!
-            return if (isRelative) {
-                // BEQ is PC for (tokens in parsedLines) -Relative: Target - (PC + 1)
-                (targetAddress - (currentAddress + 1)).toShort()
-            } else {
-                targetAddress
+            val offset = targetAddress - (currentAddress + 1)
+            if (isRelative) {
+                if (offset !in -64..63) throw IllegalStateException("Branch target '$input' out of range by $offset words!")
+                return offset.toShort()
             }
         }
         if (input.isNumber()) return input.toNumber()
