@@ -4,6 +4,11 @@ import io.cuttlefish.linking.*
 import java.io.*
 
 class Parser(file: File, val baseAddress: Short) {
+//    val x = RelocationTable(
+//        offset = 9u,
+//        name = $$"$SBIT",
+//        type = RelocationType.ABS_LUI
+//    )
     private val text = file.readLines()
     val symbolTable = mutableMapOf<String, Short>()
 
@@ -14,7 +19,7 @@ class Parser(file: File, val baseAddress: Short) {
     private fun String.isNumber(): Boolean {
         return try {
             this.toNumber(); true
-        } catch (_: Exception) {
+        } catch (_: NumberFormatException) {
             false
         }
     }
@@ -25,8 +30,8 @@ class Parser(file: File, val baseAddress: Short) {
             this.startsWith("-0x", ignoreCase = true) -> ("-" + this.substring(3)).toInt(16)
             this.startsWith("0") && this.length > 1 -> this.toInt(8)
             this.startsWith("-0") && this.length > 2 -> ("-" + this.substring(2)).toInt(8)
-            this.startsWith("$") -> if (this in MagicValues.entries.map { it.name }) {
-                MagicValues.entries.find { it.name == this }?.value!!
+            this.startsWith("$") -> if (this.removePrefix("$") in MagicValues.entries.map { it.name }) {
+                MagicValues.entries.find { it.name == this.removePrefix("$") }?.value!!
             } else throw IllegalArgumentException("$this is not a predefined magic value!")
 
             else -> this.toInt(10)
