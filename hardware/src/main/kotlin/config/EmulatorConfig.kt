@@ -22,7 +22,8 @@ data class ClockConfig(
 @Serializable
 data class DebugConfig(
     val printInstructions: Boolean = false,
-    val printRegistersOnHalt: Boolean = true
+    val printRegistersOnHalt: Boolean = true,
+    val printState: Boolean = false
 )
 
 object GlobalConfig {

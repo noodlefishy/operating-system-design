@@ -28,6 +28,9 @@ class Cpu(val mmu: MemoryBus) {
         if (GlobalConfig.debug.printInstructions) {
             println("$currentPc | $instruction")
         }
+        if (GlobalConfig.debug.printState) {
+            println("$currentPc | $registers")
+        }
 
         if (instruction is Instruction.Jalr && instruction.immediate != 0.toShort()) {
             val trapId = instruction.immediate
