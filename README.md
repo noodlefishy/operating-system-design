@@ -86,5 +86,4 @@ memory:
 
 ## Documentation
 
-For complete reference guides, calling conventions, hardware specs, and software algorithm tutorials, visit the **(GitHub
-Wiki)[https://github.com/noodlefishy/Pistachio/wiki]**. 
+For complete reference guides, calling conventions, hardware specs, and software algorithm tutorials, visit the **[GitHub Wiki](https://github.com/noodlefishy/Pistachio/wiki)**. 
