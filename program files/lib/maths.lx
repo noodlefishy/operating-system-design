@@ -1,4 +1,23 @@
 
+lessThan:
+    push r2
+    push r3
+
+    NAND r2, r2, r2
+    movi r3, 1
+    ADD r2, r2, r3
+
+    ADD r1, r1, r2
+
+    movi r3, 0x8000
+    NAND r1, r1, r3
+
+    NAND r1, r1, r1
+
+    pop r3
+    pop r2
+
+    ret
 
 
 // R3 = R1 * R2

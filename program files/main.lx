@@ -1,18 +1,11 @@
 main:
     movi r6 stack
-    movi r1 10
-    movi r2 5
-    // R3, R4
-    NAND r2, r2, r2
-    movi r3, 1
-    ADD r2, r2, r3
 
-    ADD r1, r1, r2
+    // r1 < r2
+    movi r1 20
+    movi r2 10
 
-    movi r3, 0x8000
-    NAND r1, r1, r3
-
-    NAND r1, r1, r1
+    call lessThan
 
     halt
     // r1, r2 in
