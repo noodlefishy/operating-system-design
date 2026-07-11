@@ -1,10 +1,10 @@
 package io.cuttlefish.devices
 
-import io.cuttlefish.*
 
-
-class DisplayDevice : MemoryManagement {
+class Display : Device {
+    override val deviceId: UShort = 2u
     val dimensions = 8 to 8
+    override val memoryUsed: IntRange = 0xFE00..0xFE00
     override suspend fun read(address: Short): Short {
         TODO("Not yet implemented")
     }

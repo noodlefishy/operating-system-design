@@ -4,9 +4,13 @@ import io.cuttlefish.*
 import io.cuttlefish.components.*
 import kotlinx.coroutines.*
 
-class Console : MemoryManagement {
+class Console : Device {
     // jalr r0 r0 2 = print
     // print what is in r1
+
+    override val deviceId: UShort = 1u
+    override val memoryUsed: IntRange = 0xFF01..0xFF02
+
     override suspend fun read(address: Short): Short {
         delay(Clock.DEVICE_CONSOLE_READ_TIME)
 
