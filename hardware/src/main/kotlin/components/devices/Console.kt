@@ -31,7 +31,6 @@ class Console : MemoryManagement {
             System.err.print(value.toInt().toChar())
         }
 
-        TODO("Not yet implemented")
     }
 }
 
