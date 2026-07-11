@@ -1,4 +1,4 @@
-package io.cuttlefish.components.devices
+package io.cuttlefish.devices
 
 import io.cuttlefish.*
 

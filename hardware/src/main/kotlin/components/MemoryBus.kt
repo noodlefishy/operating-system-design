@@ -1,7 +1,7 @@
 package io.cuttlefish.components
 
 import io.cuttlefish.*
-import io.cuttlefish.components.devices.*
+import io.cuttlefish.devices.Console
 
 class MemoryBus(val ram: PhysicalMemory) : MemoryManagement {
 

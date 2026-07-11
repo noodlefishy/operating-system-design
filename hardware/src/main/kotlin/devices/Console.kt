@@ -1,4 +1,4 @@
-package io.cuttlefish.components.devices
+package io.cuttlefish.devices
 
 import io.cuttlefish.*
 import io.cuttlefish.components.*
@@ -32,11 +32,4 @@ class Console : MemoryManagement {
         }
 
     }
-}
-
-
-fun Boolean.toShort(): Short {
-    return if (this) {
-        1
-    } else 0
 }
