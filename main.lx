@@ -1,1 +1,1 @@
-.fill "hi y'all"
+.fill "hi y'all"movi r1, 65       // ASCII code for 'A'movi r2, 0xFF00   // Console MMIO Write Addresssw r1, r2, 0      // Prints 'A' to the screen!!halt

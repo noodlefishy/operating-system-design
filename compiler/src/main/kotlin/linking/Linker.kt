@@ -176,7 +176,7 @@ suspend fun main() {
     val p2 = linker.passTwo(p1)
     p2.forEach(::println)
     println("-----")
-    val memory = MemoryBus(PhysicalMemory(), DisplayDevice())
+    val memory = MemoryBus(PhysicalMemory())
     for ((index, word) in p2.withIndex()) {
         memory.write((index.toUShort()).toShort(), word.toShort())
     }

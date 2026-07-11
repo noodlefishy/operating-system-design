@@ -120,7 +120,7 @@ private suspend fun handleCompileAndRun(args: List<String>) {
     val parse = Parser(file, 0).decode()
     val machineCode = Backend().encode(parse)
 
-    val memory = MemoryBus(PhysicalMemory(), DisplayDevice())
+    val memory = MemoryBus(PhysicalMemory())
     for ((index, word) in machineCode.withIndex()) {
         memory.write(index.toShort(), word.toShort())
     }
@@ -139,7 +139,7 @@ private suspend fun handleRun(args: List<String>) {
     val baseAddress = if (lines[0].startsWith("@")) lines[0].drop(1).toShort() else 0.toShort()
     val machineCode = (if (lines[0].startsWith("@")) lines.drop(1) else lines).map { it.trim().toUShort() }
 
-    val memory = MemoryBus(PhysicalMemory(), DisplayDevice())
+    val memory = MemoryBus(PhysicalMemory())
     for ((index, word) in machineCode.withIndex()) {
         memory.write((baseAddress + index).toShort(), word.toShort())
     }
@@ -159,7 +159,7 @@ private suspend fun handleRunOs(args: List<String>) {
     val kernelCode = Backend().encode(Parser(kernelFile, MemoryMapRanges.vectorRange.first.toShort()).decode())
     val mainCode = Backend().encode(Parser(mainFile, MemoryMapRanges.userLandRange.first.toShort()).decode())
 
-    val memory = MemoryBus(PhysicalMemory(65536), DisplayDevice())
+    val memory = MemoryBus(PhysicalMemory(65536))
 
     kernelCode.forEachIndexed { i, word ->
         memory.write(i.toShort(), word.toShort())

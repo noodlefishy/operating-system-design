@@ -1,8 +1,9 @@
 package io.cuttlefish.components
+
 import io.cuttlefish.*
 import io.cuttlefish.components.devices.*
 
-class MemoryBus(val ram: PhysicalMemory, val display: DisplayDevice) : MemoryManagement {
+class MemoryBus(val ram: PhysicalMemory) : MemoryManagement {
 
 
     override suspend fun read(address: Short): Short {
@@ -10,7 +11,7 @@ class MemoryBus(val ram: PhysicalMemory, val display: DisplayDevice) : MemoryMan
             in MemoryMapRanges.vectorRange -> ram.read(address)
             in MemoryMapRanges.kernelRange -> ram.read(address)
             in MemoryMapRanges.userLandRange -> ram.read(address)
-            in MemoryMapRanges.mmioRange -> display.read(address)
+            in MemoryMapRanges.mmioRange -> Console().read(address)
             else -> error("Unknown addresses?")
         }
     }
