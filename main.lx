@@ -1,1 +1,1 @@
-main:    // r1 / r2    movi r6 stack    movi r1 20    movi r2 6    call modulus    halt.space 20stack:
+main:    // r1 / r2    movi r6 stack    movi r1 20    movi r2 6    call multiply    halt.space 20stack:

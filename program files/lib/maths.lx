@@ -1,7 +1,11 @@
 
 
 // X_{n+1} = (aX_n + c ) (mod m)
-//
+// m = 10, a = 7, c = 7, X_n = 7
+random:
+
+
+
 
 
 // r1 = r1 % r2
@@ -102,15 +106,16 @@ lessThan:
     ret
 
 
-// R3 = R1 * R2
+// R1 = R1 * R2
 multiply:
     push r4
-    movi r3 0 // 3
+    add r3 r1 r0
+    movi r1 0
     movi r4 0 // 4
     .loop: // 5
         addi r4 r4 1
-        add r3 r3 r2
-        beq r4 r1 .done
+        add r1 r1 r2
+        beq r4 r3 .done
         beq r0 r0 .loop
 .done:
     pop r4
