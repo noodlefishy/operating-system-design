@@ -79,7 +79,7 @@ memory:
 
 ```bash
 # PS: This might not work every commit so try and make your own !!
-./lx -os kernel.lx program_files/main.lx
+./lx -i Hello_World.lx
 ```
 
 ---
