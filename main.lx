@@ -1,1 +1,1 @@
-main:    movi r1 0x0001    movi r2 0xFF03    sw r1 r2 0    movi r1 0xFF0F    addi r1 r1 27
+main:    movi r1 0x0001    movi r2 0xFF03    sw r1 r2 0    movi r1 0xFF0F    addi r1 r1 27    halt

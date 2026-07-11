@@ -29,7 +29,15 @@ class MemoryBus(val ram: PhysicalMemory) : MemoryManagement {
             in MemoryMapRanges.vectorRange -> ram.write(address, value)
             in MemoryMapRanges.kernelRange -> ram.write(address, value)
             in MemoryMapRanges.userLandRange -> ram.write(address, value)
-            in MemoryMapRanges.mmioRange -> Console().write(address, value)
+            in MemoryMapRanges.mmioRange -> {
+                for (device in devices) {
+                    if (address in device.memoryUsed) {
+                        device.write(address, value)
+                    }
+                }
+                throw IllegalAccessException("Device $address not found")
+            }
+
             else -> error("Unknown addresses?")
         }
     }

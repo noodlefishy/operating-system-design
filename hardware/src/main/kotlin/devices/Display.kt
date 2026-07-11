@@ -12,6 +12,7 @@ class Display : Device {
     val dimensions = 8 to 8
     override val memoryUsed: UIntRange = 0xFF03u..0xFF4Fu
     override suspend fun read(address: UShort): Short {
+        println(address.toString(16))
         TODO("Not yet implemented")
     }
 
