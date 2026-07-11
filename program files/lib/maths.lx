@@ -1,4 +1,69 @@
 
+// Inputs: r1 (Dividend), r2 (Divisor)
+// Outputs: r1 (Quotient), r3 (Remainder)
+divide:
+    push r4
+    push r5
+    push r7
+
+    movi r3 0           // Initialise Remainder to 0
+    movi r4 16          // Initialise Loop Counter to 16
+
+
+    .div_loop:
+        // 1. Shift rem left
+        add r3 r3 r3    // multiply by 2
+
+        // checking msb of r1
+        movi r5 $SBIT
+        nand r5 r1 r5
+        nand r5 r5 r5   // not
+
+        beq r5 r0 .skip_carry
+        addi r3 r3 1    // This is the carry bit
+
+    .skip_carry:
+        // shift the r1 left (to make space)
+        add r1 r1 r1
+
+        // test substraction, if r3 >= r2
+        // r5 = r3 + r2~  +1
+
+        nand r5 r2 r2
+        addi r5 r5 1
+        add r5 r3 r5
+
+        // Check if r5 is negative (does it have the Sign Bit?)
+        movi r7 $SBIT
+        nand r7 r5 r7
+        nand r7 r7 r7
+
+        // If r7 == $SBIT, r5 is negative (r3 < r2). Do not subtract!
+        movi r5 $SBIT
+        beq r7 r5 .skip_sub
+
+        // It fits!! Update Remainder and Quotient
+        // r3 = r3 - r2
+        nand r5 r2 r2
+        addi r5 r5 1
+        add r3 r3 r5
+
+        addi r1 r1 1    // Add 1 to Quotient (bottom bit of r1)
+
+    .skip_sub:
+        addi r4 r4 -1
+        beq r4 r0 .div_done
+        beq r0 r0 .div_loop
+
+    .div_done:
+        pop r7
+        pop r5
+        pop r4
+        ret
+
+
+
+
 lessThan:
     push r2
     push r3
