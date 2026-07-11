@@ -3,75 +3,71 @@ package io.cuttlefish
 import java.awt.*
 import javax.swing.*
 
-data class RenderObject(val x: Int, val y: Int, val color: Color)
 
-class GameCanvas : JPanel() {
-    private val objectsToDraw = java.util.concurrent.CopyOnWriteArrayList<RenderObject>()
+private val pixelData = IntArray(8 * 8)
+
+
+fun main() {
+    val frame = JFrame("8x8 Pixel Grid")
+    val g = frameInit(frame)
+
+    val x = 4 - 1
+    val y = 4 - 1
+    pixelData[y * 8 + x] = 0xFFE0
+    g.repaint()
+}
+
+class GridPanel(private val data: IntArray) : JPanel() {
+    private val pixelSize = 50
 
     init {
-        preferredSize = Dimension(640, 640)
-        background = Color.black
-
-    }
-
-    fun addShape(x: Int, y: Int, color: Color) {
-        objectsToDraw.add(RenderObject(x, y, color))
-        repaint()
-    }
-
-    fun clearCanvas() {
-        objectsToDraw.clear()
-        repaint()
-    }
-
-    private fun drawGrid(g: Graphics2D) {
-        g.color = Color.WHITE
-
-        for (xx in 1..8) {
-            g.drawLine(
-                xx * 80, 0, xx * 80, 640
-            )
-
-            g.drawLine(
-                0, xx * 80, 640, xx * 80
-            )
-        }
-    }
-
-
-    fun drawGameObject(g: Graphics2D, obj: RenderObject) {
-        g.color = obj.color
-        g.fillOval(obj.x, obj.y, 40, 40)
-
-        g.color = Color.WHITE
-        g.drawOval(obj.x, obj.y, 40, 40)
+        this.preferredSize = Dimension(8 * pixelSize, 8 * pixelSize)
     }
 
     override fun paintComponent(g: Graphics) {
         super.paintComponent(g)
-        drawGrid(g as Graphics2D)
-        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
 
-        for (obj in objectsToDraw) {
-            drawGameObject(g, obj)
+        for (i in data.indices) {
+            val x = i % 8
+            val y = i / 8
+
+
+            // 1. Get the 16-bit unsigned value from the short
+            val rgb565 = data[i] and 0xFFFF
+
+
+            // 2. Extract channels using bitmasks and bit shifts
+            val r5 = (rgb565 shr 11) and 0x1F // Red: Top 5 bits
+            val g6 = (rgb565 shr 5) and 0x3F // Green: Middle 6 bits
+            val b5 = rgb565 and 0x1F // Blue: Bottom 5 bits
+
+
+            // 3. Scale up to 8-bit channels (0-255) for Java Swing
+            val r8 = (r5 * 255) / 31
+            val g8 = (g6 * 255) / 63
+            val b8 = (b5 * 255) / 31
+
+            g.color = Color(r8, g8, b8)
+
+            g.fillRect(x * pixelSize, y * pixelSize, pixelSize, pixelSize)
+
+
+            g.color = Color.LIGHT_GRAY
+            g.drawRect(x * pixelSize, y * pixelSize, pixelSize, pixelSize)
         }
     }
 }
 
-fun main() {
-    val frame = JFrame("Public Draw Function Demo")
-    val canvas = GameCanvas()
 
-    frame.add(canvas)
+fun frameInit(frame: JFrame): GridPanel {
+    frame.defaultCloseOperation = JFrame.EXIT_ON_CLOSE
+    val grid = GridPanel(pixelData)
+    frame.add(grid)
+
     frame.pack()
     frame.isResizable = false
     frame.setLocationRelativeTo(null)
-    frame.defaultCloseOperation = JFrame.EXIT_ON_CLOSE
+
     frame.isVisible = true
-
-    // Example of an external process using the canvas public functions
-    canvas.addShape(250, 180, Color.GREEN)
-    canvas.addShape(400, 80, Color.ORANGE)
-
-
+    return grid
 }
