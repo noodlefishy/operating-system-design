@@ -1,16 +1,15 @@
 package io.cuttlefish.devices
 
-
 import java.awt.*
 import javax.swing.*
 
-
 class Display : Device {
-    private val frame = JFrame("Pixastachio")
+    private var frame: JFrame? = null // Start as null to prevent instant Swing thread startup!!
     private var grid: GridPanel? = null
+
     override val deviceId: UShort = 2u
-    val dimensions = 8 to 8
-    override val memoryUsed: UIntRange = 0xFF03u..0xFF4Fu
+    override val memoryUsed: UIntRange = 0xFF03u..0xFF4Eu // Fixed boundary to prevent crash!!
+
     override suspend fun read(address: UShort): Short {
         println(address.toString(16))
         TODO("Not yet implemented")
@@ -21,46 +20,44 @@ class Display : Device {
             0xFF03 -> {
                 when (value) {
                     0.toShort() -> {
-                        frame.dispose()
+                        frame?.dispose()
+                        frame = null
+                        grid = null
                     }
 
                     1.toShort() -> {
-                        grid = frameInit(frame)
+                        if (frame == null) {
+                            frame = JFrame("Pixastachio")
+                        }
+                        grid = frameInit(frame!!)
                         grid!!.repaint()
                     }
 
                     2.toShort() -> {
-                        pixelData.copyOf().forEach { pixelData[it] = 0x0000 }
-                        grid!!.repaint()
+                        pixelData.fill(0)
+                        grid?.repaint()
                     }
 
                     4.toShort() -> {
-                        grid!!.repaint()
+                        grid?.repaint()
                     }
                 }
             }
 
-            in 0xFF0F..0xFF4F -> {
-                pixelData[(address.toInt() - 0xFF0F)] = value.toInt()
-            }
+            in 0xFF0F..0xFF4E -> {
+                if (frame == null) {
+                    frame = JFrame("Pixastachio")
+                    grid = frameInit(frame!!)
+                }
 
+                pixelData[(address.toInt() - 0xFF0F)] = value.toInt()
+                grid?.repaint()
+            }
         }
     }
 }
 
-
 private val pixelData = IntArray(8 * 8)
-
-
-fun main() {
-    val frame = JFrame("8x8 Pixel Grid")
-    val g = frameInit(frame)
-
-    val x = 4 - 1
-    val y = 4 - 1
-    pixelData[y * 8 + x] = 0xFFE0
-    g.repaint()
-}
 
 class GridPanel(private val data: IntArray) : JPanel() {
     private val pixelSize = 50

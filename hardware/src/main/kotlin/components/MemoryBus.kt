@@ -31,8 +31,9 @@ class MemoryBus(val ram: PhysicalMemory) : MemoryManagement {
             in MemoryMapRanges.userLandRange -> ram.write(address, value)
             in MemoryMapRanges.mmioRange -> {
                 for (device in devices) {
-                    if (address in device.memoryUsed) {
+                    if (address.toUInt() in device.memoryUsed ||address.toUInt() == device.memoryUsed.first) {
                         device.write(address, value)
+                        return
                     }
                 }
                 throw IllegalAccessException("Device $address not found")
