@@ -1,4 +1,21 @@
 
+
+// X_{n+1} = (aX_n + c ) (mod m)
+//
+
+
+// r1 = r1 % r2
+modulus:
+    push r7
+    call divide
+    pop r7
+
+    movi r1 0
+    add r1 r3 r0
+
+    ret
+
+
 // Inputs: r1 (Dividend), r2 (Divisor)
 // Outputs: r1 (Quotient), r3 (Remainder)
 divide:
