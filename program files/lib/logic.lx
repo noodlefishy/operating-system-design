@@ -7,12 +7,8 @@ xnor:
     nand r2 r1 r2
     nand r1 r3 r2
 
+    ret
     // nand r1 r1 r1
-
-
-
-
-
 
 nor:
     nand r1 r1 r1
@@ -21,6 +17,7 @@ nor:
 
     nand r1 r1 r1
 
+    ret
 
 not:
     nand r1 r1 r1
