@@ -1,16 +1,21 @@
 main:
     movi r6 stack
 
-    // r1 < r2
-    movi r1 20
-    movi r2 10
+	movi r2 string
+	halt
+//	lw r1 r2 0
+//	add r3 r2 r0
+//	.len_loop:
+//		beq r1 r0 .len_done
+//		addi r2 r2 1
+//		lw r1 r2 0
+//
+//	.len_done:
+//		halt
 
-    call lessThan
 
-    halt
-    // r1, r2 in
-    // r1 out, 0x8000 (true) 0x0000 (false)
 
+string: .fill "Hello!"
 
 .space 20
 stack:
@@ -18,3 +23,14 @@ stack:
 
 // 10 < 5 = 1
 // 5 < 10 = -32767
+
+/*
+
+r2 = 0
+
+@loop
+
+
+
+
+*/
