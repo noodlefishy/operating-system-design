@@ -295,7 +295,7 @@ class Parser(file: File, val baseAddress: Short) {
                 }
                 ".fill" -> {
                     val parsed = tokens.subList(startIndex + 1, tokens.size).joinToString(" ")
-                    if (parsed.all { it.isDigit() } || symbolTable.containsKey(tokens[startIndex + 1])) {
+                    if (parsed.isNumber() || symbolTable.containsKey(tokens[startIndex + 1])) {
                         val value = resolveValue(tokens[startIndex + 1], currentPC, type = RelocationType.ABS_16)
                         instructions += Instruction.DataWord(value)
                         currentPC++
