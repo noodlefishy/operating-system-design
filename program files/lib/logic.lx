@@ -1,5 +1,31 @@
 
 
+xnor:
+
+
+
+
+
+
+nor:
+    nand r1 r1 r1
+    nand r2 r2 r2
+    nand r1 r1 r2
+
+    nand r1 r1 r1
+
+
+not:
+    nand r1 r1 r1
+    ret
+
+
+and:
+    nand r1 r1 r2
+    nand r1 r1 r1
+
+    ret
+
 xor:
     push r4
 
