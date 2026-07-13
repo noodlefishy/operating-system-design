@@ -27,8 +27,8 @@ class Parser(file: File, val baseAddress: Short) {
             this.startsWith("0") && this.length > 1 -> this.toInt(8)
             this.startsWith("-0") && this.length > 2 -> ("-" + this.substring(2)).toInt(8)
             this.startsWith("$") -> {
-                val magic = this.removePrefix("$")
-                MagicValues.entries.firstOrNull { it.name == magic }?.value
+                val magic = this.removePrefix("$").lowercase()
+                MagicValues.entries.firstOrNull { it.name.lowercase() == magic }?.value
                     ?: throw IllegalArgumentException("$this is not a predefined magic value!")
             }
 
