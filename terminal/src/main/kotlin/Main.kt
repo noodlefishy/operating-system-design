@@ -198,7 +198,7 @@ private suspend fun handleCompileAndRun(args: List<String>) {
             cpu.tick()
         }
     } catch (e: Exception) {
-        throwRuntimeError(cpu, e)
+        throwRuntimeError(cpu, e, baseAddr.toUShort(), machineCode)
     }
 }
 
@@ -221,7 +221,7 @@ private suspend fun handleRun(args: List<String>) {
             cpu.tick()
         }
     } catch (e: Exception) {
-        throwRuntimeError(cpu, e)
+        throwRuntimeError(cpu, e,baseAddress.toUShort(),machineCode.toTypedArray())
     }
 }
 
@@ -249,7 +249,7 @@ private suspend fun handleRunOs(args: List<String>) {
             cpu.tick()
         }
     } catch (e: Exception) {
-        throwRuntimeError(cpu, e)
+        throwRuntimeError(cpu, e, MemoryMapRanges.userLandRange.first.toUShort(), mainCode.toTypedArray())
     }
 
 }
@@ -286,7 +286,7 @@ fun loadConfig() {
     GlobalConfig.debug = config.debug
 }
 
-private fun throwRuntimeError(cpu: Cpu, e: Exception) {
+private suspend fun throwRuntimeError(cpu: Cpu, e: Exception, baseAddr: UShort, machineCode: Array<UShort>) {
     System.err.println("==================================================")
     System.err.println("          !!! CPU HARDWARE EXCEPTION !!!          ")
     System.err.println("==================================================")
@@ -302,5 +302,47 @@ private fun throwRuntimeError(cpu: Cpu, e: Exception) {
         System.err.println("    $regName : $value ($hexVal)")
     }
     System.err.println("==================================================\n")
+    printHexDump(cpu.mmu, baseAddr, machineCode.size)
+    System.err.println("==================================================\n")
+
+
     exitProcess(1)
+}
+
+
+suspend fun printHexDump(memory: MemoryBus, startAddress: UShort, length: Int) {
+    val start = startAddress.toInt() and 0xFFFF
+    val end = (start + length) and 0xFFFF
+
+    System.err.println("-------------------- POST HEX DUMP 0000----------------")
+    System.err.println("ADDR  | 0    1    2    3    4    5    6    7    | ASCII")
+    System.err.println("-------------------------------------------------------")
+
+    val alignedStart = start - (start % 8)
+
+    for (addr in alignedStart..end step 8) {
+        val hexAddr = addr.toString(16).uppercase().padStart(4, '0')
+        val wordsHex = StringBuilder()
+        val asciiChars = StringBuilder()
+
+        for (i in 0 until 8) {
+            val currentAddr = (addr + i).toShort()
+            val word = try {
+                memory.read(currentAddr.toUShort()).toInt() and 0xFFFF
+            } catch (e: Exception) {
+                0x0000 // Return zero if memory address is unreadable
+            }
+
+            wordsHex.append(word.toString(16).uppercase().padStart(4, '0')).append(" ")
+
+            val highByte = (word ushr 8) and 0xFF
+            val lowByte = word and 0xFF
+
+            asciiChars.append(if (highByte in 32..126) highByte.toChar() else '.')
+            asciiChars.append(if (lowByte in 32..126) lowByte.toChar() else '.')
+        }
+
+        System.err.println("$hexAddr: $wordsHex| $asciiChars")
+    }
+    System.err.println("-------------------------------------------------------")
 }
