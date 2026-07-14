@@ -1,0 +1,17 @@
+
+s1: "Hello" // 5
+s2: "HelloL" // 6
+
+// ...
+
+// r1 = length of s2
+// r2 = length of s1
+
+// ...
+push r2
+push r1
+
+call subtract // s2 - s1
+
+
+nand r3 r1 $sbit

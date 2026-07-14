@@ -1,30 +1,74 @@
 main:
-    movi r6 stack
+    movi r6 [stack]
 
-	movi r1 string
+	movi r1 [s1]
+	call str_len
 
-	.loop:
+	add r2 r1 r0
+
+	push r2
+
+	movi r1 [s2]
+	call str_len
+
+	pop r2
+	// r1 = length of s2
+	// r2 = length of s1
+
+	push r1
+	push r2
+
+	// R1 = R1 - R2, for comparison
+
+	nand r2 r2 r2
+	add r1 r2 r1
+	addi r1 r1 1
+
+	beq r1 r0 .is_Zero
+
+//	movi r1 #-3945
+	movi r2 $sbit
+	nand r1 r1 r2
+
+	movi r3 $aons // pos
+	movi r4 $mxit // neg
+
+	beq r1 r4 [negative]
+	beq r1 r3 [positive]
+
+	// R1 is the bigger one
+	// R2 is the smaller one
+
+	positive:
+		movi r1 [m2]
+        call prints
+        halt
 
 
-	movi r1 0x0001
-    movi r2 0xFF03
-    sw r1 [r2 + #0]        // Intisilaises the window
+	negative:
+		movi r1 [m1]
+		call prints
+		halt
 
-    movi r1 0xFF0F    // Loads the base address for the window
-    addi r1 r1 #27     // Makes it (4,4) (3 * 8 + 3)
-    movi r2 0x07E0    // Green
-    sw r2 [r1 + 0]        // add to window
+	.is_Zero:
+		movi r1 [m3]
+		call prints
+		halt
+
 
 
 	halt
 
 
-s1: .fill "Hello"
-s2: .fill "Hello"
+m1: .fill "S1 is bigger\n"
+m2: .fill "R2 is bigger\n"
+m3: .fill "S1 = S2\n"
 
-.space 20
+.space 1
+
+
+s1: .fill "Hello" // 5
+s2: .fill "HelloL" // 6
+
+.space 30
 stack:
-
-
-
-
