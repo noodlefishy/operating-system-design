@@ -359,30 +359,32 @@ suspend fun printHexDump(memory: MemoryBus, startAddress: UShort, length: Int) {
     val end = (start + length) and 0xFFFF
 
     val use16 = GlobalConfig.debug.printHex16Dump
-
+    val word16 = GlobalConfig.debug.use16wordAddressInDump
+    val extraSpacing = if (word16) 4 else 4
     val print16 =
         """
-        ------------------------------------------ POST HEX DUMP 0x00FU ----------------------------------------
-        ADDR  | 0    1    2    3    4    5    6    7    8    9   10   11   12   13   14   15  |      ASCII      
-        --------------------------------------------------------------------------------------------------------
+        ${if (use16) "-".repeat(8*extraSpacing) else ""}------------------------------------------ POST HEX DUMP 0x00FU ----------------------------------------${if (use16) "-".repeat(8*extraSpacing) else ""}
+        ADDR  | 0    1    2    3    4    5    6    7    8    9   10   11   12   13   14   15  |      ${if (use16) " ".repeat(4*extraSpacing) else ""}ASCII      
+        ${if (use16) "-".repeat(8*extraSpacing) else ""}--------------------------------------------------------------------------------------------------------${if (use16) "-".repeat(8*extraSpacing) else ""}
         """.trimIndent()
 
-    val print8 = """
-        -------------------- POST HEX DUMP 0x00FU -------------
-        ADDR  | 0    1    2    3    4    5    6    7    | ASCII
-        -------------------------------------------------------
+    val print8 = $$"""
+        ........
+        $${if (use16) "-".repeat(4*extraSpacing) else ""}-------------------- POST HEX DUMP 0x00FU --------------$${if (use16) "-".repeat(4*extraSpacing) else ""}
+        ADDR  | 0    1    2    3    4    5    6    7    |  $${if (use16) " ".repeat(2*extraSpacing) else ""}ASCII
+        $${if (use16) "-".repeat(4*extraSpacing) else ""}--------------------------------------------------------$${if (use16) "-".repeat(4*extraSpacing) else ""}
         """.trimIndent()
 
-    if (use16) System.err.println(print16) else System.err.println(print8)
+//    if (use16) System.err.println(print16) else System.err.println(print8)
 
     val alignedStart = start - (start % 8)
 
-    for (addr in alignedStart..end step 16) {
+    for (addr in alignedStart..end step if (use16) 16 else 8) {
         val hexAddr = addr.toString(16).uppercase().padStart(4, '0')
         val wordsHex = StringBuilder()
         val asciiChars = StringBuilder()
 
-        for (i in 0 until 16) {
+        for (i in 0 until if (use16) 16 else 8) {
             val currentAddr = (addr + i).toShort()
             val word = try {
                 memory.read(currentAddr.toUShort()).toInt() and 0xFFFF
@@ -406,5 +408,5 @@ suspend fun printHexDump(memory: MemoryBus, startAddress: UShort, length: Int) {
 
         System.err.println("$hexAddr: $wordsHex| $asciiChars")
     }
-    if (use16) System.err.println(print16.split('\n').last()) else System.err.println(print8.split('\n').last())
+//    if (use16) System.err.println(print16.split('\n').last()) else System.err.println(print8.split('\n').last())
 }

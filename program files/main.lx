@@ -1,5 +1,6 @@
 main:
     movi r6, [stack]
+	addi r6 r6 #-1
 
     movi r2, [s1]
     movi r3, [s2]
@@ -24,10 +25,16 @@ main:
     beq r0, r0, .loop
 
 .not_equal:
+
     push r2
     movi r1, [notEq]
     call prints
     pop r2
+
+//    nand r5 r5 r5
+//    add r1 r4 r5
+//    addi r1 r1 1
+
     halt
 
 .is_equal:
@@ -35,11 +42,14 @@ main:
     movi r1, [isEq]
     call prints
     pop r2
+//    nand r5 r5 r5
+//    add r1 r4 r5
+//    addi r1 r1 1
     halt
 
 // --- Data Section ---
-s1: .fill "Hello"
-s2: .fill "Hello"
+s1: .fill "Hello World in paris"
+s2: .fill "Hello World"
 
 isEq: .fill "Is equal\n"
 notEq: .fill "Not equal\n"
