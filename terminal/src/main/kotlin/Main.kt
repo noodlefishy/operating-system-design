@@ -250,8 +250,6 @@ private suspend fun handleRunOs(args: List<String>) {
     val cleanArgs = args.filter { it != "--dump" }
 
 
-
-
     val kernelFile = getFileOrThrow(cleanArgs[0])
     val mainFile = getFileOrThrow(cleanArgs[1])
 
@@ -273,7 +271,7 @@ private suspend fun handleRunOs(args: List<String>) {
             cpu.tick()
         }
         if (shouldDump) {
-            printHexDump(memory,  MemoryMapRanges.userLandRange.first.toUShort(), mainCode.size)
+            printHexDump(memory, MemoryMapRanges.userLandRange.first.toUShort(), mainCode.size)
 
         }
     } catch (e: Exception) {
@@ -360,9 +358,20 @@ suspend fun printHexDump(memory: MemoryBus, startAddress: UShort, length: Int) {
     val start = startAddress.toInt() and 0xFFFF
     val end = (start + length) and 0xFFFF
 
-    System.err.println("------------------------------------------ POST HEX DUMP 0000 ------------------------------------------")
-    System.err.println("ADDR  | 0    1    2    3    4    5    6    7    8    9    10   11   12   13   14   15 | ASCII")
-    System.err.println("--------------------------------------------------------------------------------------------------------")
+    val use16 = GlobalConfig.debug.printHex16Dump
+
+    val print16 =
+        """------------------------------------------ POST HEX DUMP 0x00FU ----------------------------------------
+        ADDR  | 0    1    2    3    4    5    6    7    8    9   10   11   12   13   14   15  |      ASCII      
+        --------------------------------------------------------------------------------------------------------
+        """.trimIndent()
+
+    val print8 = """-------------------- POST HEX DUMP 0x00FU -------------
+        ADDR  | 0    1    2    3    4    5    6    7    | ASCII
+        -------------------------------------------------------
+        """.trimIndent()
+
+    if (use16) System.err.println(print16) else System.err.println(print8)
 
     val alignedStart = start - (start % 8)
 
@@ -392,5 +401,5 @@ suspend fun printHexDump(memory: MemoryBus, startAddress: UShort, length: Int) {
 
         System.err.println("$hexAddr: $wordsHex| $asciiChars")
     }
-    System.err.println("-------------------------------------------------------")
+    if (use16) System.err.println(print16.split('\n').last()) else System.err.println(print8.split('\n').last())
 }

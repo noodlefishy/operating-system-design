@@ -25,6 +25,7 @@ data class DebugConfig(
     val printRegistersOnHalt: Boolean = true,
     val printState: Boolean = false,
     val printHistory: Boolean = false,
+    val printHex16Dump: Boolean = true
 )
 
 object GlobalConfig {
