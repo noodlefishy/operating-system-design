@@ -23,7 +23,8 @@ data class ClockConfig(
 data class DebugConfig(
     val printInstructions: Boolean = false,
     val printRegistersOnHalt: Boolean = true,
-    val printState: Boolean = false
+    val printState: Boolean = false,
+    val printHistory: Boolean = false,
 )
 
 object GlobalConfig {

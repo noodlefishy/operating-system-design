@@ -70,7 +70,7 @@ class Parser(val file: File, val baseAddress: Short) {
 
             // 2. Preprocess syntax (strip brackets, commas, plus signs, immediate hashes)
             val cleanLine =
-                noComment.replace("[", " ").replace("]", " ").replace("+", " ").replace(",", " ")
+                noComment.replace("[", " ").replace("]", " ").replace("+", " ").replace(",", " ").replace("#"," ")
                     .trim()
 
             if (cleanLine.isEmpty()) return@forEachIndexed

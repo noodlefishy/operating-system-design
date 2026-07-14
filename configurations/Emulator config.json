@@ -9,6 +9,7 @@
     "deviceConsoleReadTimeMs": 0
   },
   "debug": {
+    "printHistory": false,
     "printInstructions": false,
     "printRegistersOnHalt": true,
     "printState": false

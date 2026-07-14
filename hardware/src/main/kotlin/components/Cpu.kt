@@ -13,8 +13,10 @@ class Cpu(val mmu: MemoryBus) {
     var isHalted = false
     var isKernelMode = true        // Flag to track CPU privilege level
     private val backend = Backend()
-
+    val history = ArrayDeque<String>(50)
     suspend fun tick() {
+
+
         if (isHalted) return
         if (pc in MemoryMapRanges.userLandRange) {
             isKernelMode = false
@@ -44,7 +46,10 @@ class Cpu(val mmu: MemoryBus) {
         if (instruction is Instruction.Jalr && instruction.immediate != 0.toShort()) {
             val trapId = instruction.immediate
             if (trapId == 1.toShort()) {
-                if (GlobalConfig.debug.printRegistersOnHalt) {
+
+                if (GlobalConfig.debug.printHistory) {
+                    history.forEach { println(it) }
+                } else if (GlobalConfig.debug.printRegistersOnHalt) {
                     println("[DEBUG] $registers")
                 }
                 isHalted = true
@@ -60,6 +65,10 @@ class Cpu(val mmu: MemoryBus) {
             handleTrap(trapId)
             return
         }
+
+        if (history.size == 50) history.removeFirst()
+        history.addLast("$pc | $instruction | $registers")
+
 
         // 3. EXECUTE
         when (instruction) {
