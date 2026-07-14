@@ -366,12 +366,12 @@ suspend fun printHexDump(memory: MemoryBus, startAddress: UShort, length: Int) {
 
     val alignedStart = start - (start % 8)
 
-    for (addr in alignedStart..end step 8) {
+    for (addr in alignedStart..end step 16) {
         val hexAddr = addr.toString(16).uppercase().padStart(4, '0')
         val wordsHex = StringBuilder()
         val asciiChars = StringBuilder()
 
-        for (i in 0 until 8) {
+        for (i in 0 until 16) {
             val currentAddr = (addr + i).toShort()
             val word = try {
                 memory.read(currentAddr.toUShort()).toInt() and 0xFFFF
@@ -381,11 +381,13 @@ suspend fun printHexDump(memory: MemoryBus, startAddress: UShort, length: Int) {
 
             wordsHex.append(word.toString(16).uppercase().padStart(4, '0')).append(" ")
 
-            val highByte = (word ushr 8) and 0xFF
-            val lowByte = word and 0xFF
 
-            asciiChars.append(if (highByte in 32..126) highByte.toChar() else '.')
-            asciiChars.append(if (lowByte in 32..126) lowByte.toChar() else '.')
+            asciiChars.append(if (word in 32..126) word.toChar() else '.')
+//            val highByte = (word ushr 8) and 0xFF
+//            val lowByte = word and 0xFF
+//
+//            asciiChars.append(if (highByte in 32..126) highByte.toChar() else '.')
+//            asciiChars.append(if (lowByte in 32..126) lowByte.toChar() else '.')
         }
 
         System.err.println("$hexAddr: $wordsHex| $asciiChars")
