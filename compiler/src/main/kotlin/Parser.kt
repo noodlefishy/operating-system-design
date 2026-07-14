@@ -11,7 +11,6 @@ class Parser(file: File, val baseAddress: Short) {
     val imports = mutableListOf<String>()
     val relocations = mutableListOf<RelocationTable>()
 
-
     private fun String.isNumber(): Boolean {
         return try {
             this.toNumber(); true
@@ -31,7 +30,6 @@ class Parser(file: File, val baseAddress: Short) {
                 MagicValues.entries.firstOrNull { it.name.lowercase() == magic }?.value
                     ?: throw IllegalArgumentException("$this is not a predefined magic value!")
             }
-
             else -> this.toInt(10)
         }
         return intVal.toShort()
@@ -54,11 +52,14 @@ class Parser(file: File, val baseAddress: Short) {
         return 0x0000
     }
 
-    fun decode(): List<Instruction> {
-        val instructions = mutableListOf<Instruction>()
+    private fun preprocess(): List<List<String>> {
+        val processedLines = mutableListOf<List<String>>()
+        var inCodeBlock = false
 
-        val parsedLines = text.map { line ->
+        for (line in text) {
+            // 1. Strip standard comments (using '//' and '#')
             val noComment = line.split(delimiters = arrayOf("//"))[0].trim()
+            if (noComment.isEmpty()) continue
 
             val cleanLine = noComment
                 .replace("[", " ")
@@ -66,27 +67,45 @@ class Parser(file: File, val baseAddress: Short) {
                 .replace("+", " ")
                 .replace(",", " ")
                 .replace("#", " ")
+                .trim()
 
+            if (cleanLine.isEmpty()) continue
 
+            val tokens = cleanLine.split(Regex("\\s+")).filter { it.isNotEmpty() }
+            if (tokens.isEmpty()) continue
 
-            cleanLine.split(Regex("[\\s,]+")).filter { it.isNotEmpty() }
-        }.filter { it.isNotEmpty() }
-
-        var addressCounter: Short = baseAddress
-        var inSymbolCodeBlock = false // Independent tracker for Pass 1!!
-        for (tokens in parsedLines) { // symbol building
             var startIndex = 0
-
-
-            if (tokens[startIndex].lowercase() == "*/") inSymbolCodeBlock = false
-            if (inSymbolCodeBlock) continue
-            if (tokens[startIndex].lowercase() == "/*") {
-                inSymbolCodeBlock = true
+            if (tokens[0].endsWith(":")) {
+                startIndex = 1
+            }
+            if (startIndex >= tokens.size) {
+                processedLines.add(tokens) // Keep lines that are ONLY labels!!
                 continue
             }
-            if (tokens[startIndex].lowercase() == "*/") continue
 
+            val activeToken = tokens[startIndex].lowercase()
+            if (activeToken == "*/") {
+                inCodeBlock = false
+                continue
+            }
+            if (inCodeBlock) continue
+            if (activeToken == "/*") {
+                inCodeBlock = true
+                continue
+            }
 
+            processedLines.add(tokens)
+        }
+        return processedLines
+    }
+
+    fun decode(): List<Instruction> {
+        val instructions = mutableListOf<Instruction>()
+        val parsedLines = preprocess() // Both passes use this EXACT list!!
+
+        var addressCounter: Short = baseAddress
+        for (tokens in parsedLines) {
+            var startIndex = 0
 
             if (tokens[0].endsWith(":")) {
                 val labelName = tokens[0].removeSuffix(":")
@@ -120,24 +139,15 @@ class Parser(file: File, val baseAddress: Short) {
         }
 
         var currentPC: Short = baseAddress
-        var inCodeBlock = false
         for (tokens in parsedLines) { // normal building
             val startIndex = if (tokens[0].endsWith(":")) 1 else 0
             // If the line was *only* a label with nothing else, skip generation
             if (startIndex >= tokens.size) continue
 
-            if (tokens[startIndex].lowercase() == "*/") inCodeBlock = false
-            if (inCodeBlock) continue
             when (val opcode = tokens[startIndex].lowercase()) {
-                "/*" -> {
-                    inCodeBlock = true
-                    continue
-                }
-                "*/" -> continue
-
                 "push" -> {
                     // push rX  sw rX, r6, 0
-                    //          addi r6, r6, 1
+                    //          addi r6, r6, -1
                     instructions += Instruction.Sw(
                         register1 = tokens[startIndex + 1].toRegisterType(), register2 = RegisterType.R6, immediate = 0
                     )
@@ -148,7 +158,7 @@ class Parser(file: File, val baseAddress: Short) {
                 }
 
                 "pop" -> {
-                    // pop rX  addi r6, r6, -1
+                    // pop rX  addi r6, r6, 1
                     //         lw rX, r6, 0
                     instructions += Instruction.Addi(
                         register1 = RegisterType.R6, register2 = RegisterType.R6, immediate = 1
@@ -166,7 +176,6 @@ class Parser(file: File, val baseAddress: Short) {
                     )
                     currentPC++
                 }
-
 
                 "call" -> {
                     val immStr = tokens[startIndex + 1]
@@ -198,7 +207,6 @@ class Parser(file: File, val baseAddress: Short) {
                     instructions += Instruction.Jalr(RegisterType.R0, RegisterType.R7, 0)
                     currentPC++
                 }
-
 
                 "add" -> {
                     instructions += Instruction.Add(
