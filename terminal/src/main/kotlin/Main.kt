@@ -1,6 +1,7 @@
 package io.cuttlefish
 
 import Linker
+import LinkerException
 import io.cuttlefish.backend.*
 import io.cuttlefish.components.*
 import io.cuttlefish.config.*
@@ -63,10 +64,20 @@ suspend fun main(args: Array<String>) {
         System.err.println("  Error: ${e.errorMessage}!!")
         System.err.println()
         exitProcess(1)
-    } catch (e: Exception) {
-        System.err.println()
-        System.err.println("\u001B[31m[LINKER EXCEPTION]\u001B[0m: ${e.message ?: "An unexpected error occurred"}")
-        System.err.println()
+    } catch (e: LinkerException) {
+        System.err.println("\u001B[31m[LINKER ERROR]\u001B[0m: ${e.errorMessage} '${e.symbolName}'")
+        System.err.println("§Referenced in file '${File(e.fileAbsolutePath).name}':")
+
+        val sourceFile = File(e.fileAbsolutePath)
+        if (sourceFile.exists()) {
+            val lines = sourceFile.readLines()
+            val lineIndex = lines.indexOfFirst { it.contains(e.symbolName) }
+            if (lineIndex != -1) {
+                val lineNumber = lineIndex + 1
+                System.err.println("    ${lineNumber.toString().padStart(4, ' ')} | ${lines[lineIndex].trim()}")
+            }
+        }
+        System.err.println("  Error: No linked files or libraries export the symbol '${e.symbolName}'")
         exitProcess(1)
     }
 }

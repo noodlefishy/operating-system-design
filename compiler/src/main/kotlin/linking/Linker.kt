@@ -92,7 +92,7 @@ class Linker(vararg objectFiles: ObjectFile, baseAddress: UShort = 0x3000u) {
                 ?: throw IllegalStateException("File layout not assigned for ${file.name} in $fileBaseAddresses")
             for (relocatable in obj.relocationTable) { // O(n^2) type shit
                 val targetAbsoluteAddress = labelAddresses[relocatable.name]
-                    ?: throw IllegalStateException("Unresolved External Symbol Error: ${relocatable.name}")
+                    ?: throw  LinkerException(file.absolutePath, relocatable.name,"Unresolved External Symbol")
                 val instructionAbsoluteAddress = fileBaseAddress + relocatable.offset
                 val indexInBuffer = instructionAbsoluteAddress - startAddress
                 val instruction = buffer[indexInBuffer.toInt()]
@@ -184,3 +184,9 @@ suspend fun main() {
         cpu.tick()
     }
 }
+
+class LinkerException(
+    val fileAbsolutePath: String,
+    val symbolName: String,
+    val errorMessage: String
+) : Exception()
