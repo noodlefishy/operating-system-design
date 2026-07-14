@@ -361,12 +361,14 @@ suspend fun printHexDump(memory: MemoryBus, startAddress: UShort, length: Int) {
     val use16 = GlobalConfig.debug.printHex16Dump
 
     val print16 =
-        """------------------------------------------ POST HEX DUMP 0x00FU ----------------------------------------
+        """
+        ------------------------------------------ POST HEX DUMP 0x00FU ----------------------------------------
         ADDR  | 0    1    2    3    4    5    6    7    8    9   10   11   12   13   14   15  |      ASCII      
         --------------------------------------------------------------------------------------------------------
         """.trimIndent()
 
-    val print8 = """-------------------- POST HEX DUMP 0x00FU -------------
+    val print8 = """
+        -------------------- POST HEX DUMP 0x00FU -------------
         ADDR  | 0    1    2    3    4    5    6    7    | ASCII
         -------------------------------------------------------
         """.trimIndent()
