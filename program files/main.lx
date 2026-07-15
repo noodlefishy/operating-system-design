@@ -1,15 +1,19 @@
 main:
     movi r6, [stack]
-    movi r1, [s1]
-    movi r2, [s2]
+    movi r1, [destination]
+	movi r2 [source]
 
 
-	call str_cmp
+	call prints
+
 
 	halt
 
-s1: .fill "Hello Worl"
-s2: .fill "Hello World"
+destination:
+	.fill "Hello "
+	.space
+source:
+ 	.fill "World\n"
 
 .space 30
 stack:

@@ -14,6 +14,10 @@ str_len:
 
 		ret
 
+
+
+// R1 = string 1
+// R2 = string 2
 str_cmp:
 	push r4
 	.loop:
@@ -49,3 +53,33 @@ str_cmp:
 
 		pop r4
  		ret
+
+// R1 = [Destination/1st]
+// R2 = [Source/2nd]
+str_cat:
+	push r4
+	push r3
+	add r4 r1 r0
+
+	.find_end_loop:
+		lw r3 [r1 + 0]
+		beq r3 r0 .start_copy
+		addi r1 r1 #1
+		beq r0 r0 .find_end_loop
+
+	.start_copy:
+		lw r3 [r2 + 0]
+		sw r3 [r1 + 0]
+		beq r3 r0 .done
+
+		addi r1 r1 #1
+		addi r2 r2 #1
+		beq r0 r0 .start_copy
+
+	.done:
+		addi r1 r4 #0
+
+		pop r3
+		pop r4
+
+		ret
