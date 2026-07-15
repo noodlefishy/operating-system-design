@@ -1,18 +1,17 @@
 main:
     movi r6, [stack]
 
-	movi r1 [string_1]
-	movi r2 [string_2]
+	movi r1 9934
 
-	call str_cat
+	call itoa
 	call prints
 
     halt
 
 
 string_1:
-	.fill "Hello "
-	.space 10
+	.fill "12345"
+	.space 0
 string_2:
 	.fill "World!"
 

@@ -22,7 +22,7 @@ str_toi:
 		add  r5, r1, r3     // r5 = (running_sum * 10) + digit
 
 		addi r4, r4, #1     // Advance string pointer
-		jalr r0 r0 .toi_loop
+		beq r0 r0 .toi_loop
 
 	.toi_done:
 		add  r1, r5, r0     // Move final integer to r1 for return
@@ -59,32 +59,32 @@ itoa:
     nand r1, r1, r1
     addi r1, r1, #1
 
-.extract_digits:
-    // r1 = r1 / 10
-    movi r2, #10
-    call divide         // r1 = Quotient, r3 = Remainder!!
+	.extract_digits:
+		// r1 = r1 / 10
+		movi r2, #10
+		call divide         // r1 = Quotient, r3 = Remainder!!
 
-    addi r3, r3, #48    // Convert remainder (0-9) to ASCII ('0'-'9')
-    sw   r3, [r4 + 0]   // Write digit to buffer
-    addi r4, r4, #1     // Advance writer pointer
+		addi r3, r3, #48    // Convert remainder (0-9) to ASCII ('0'-'9')
+		sw   r3, [r4 + 0]   // Write digit to buffer
+		addi r4, r4, #1     // Advance writer pointer
 
-    // If Quotient (r1) is not 0, keep extracting!!
-    beq  r1, r0, .extraction_done
-    b    .extract_digits
+		// If Quotient (r1) is not 0, keep extracting!!
+		beq  r1, r0, .extraction_done
+		beq r0 r0 .extract_digits
 
-.extraction_done:
-    sw   r0, [r4 + 0]   // Null-terminate the string!!
+	.extraction_done:
+		sw   r0, [r4 + 0]   // Null-terminate the string!!
 
-    add  r1, r7, r0
-    add  r2, r4, r0
-    addi r2, r2, #-1
-    call str_rev
+		add  r1, r7, r0
+		add  r2, r4, r0
+		addi r2, r2, #-1
+		call str_rev
 
-    pop  r1             // Restore original buffer pointer
-    pop  r7
-    pop  r5
-    pop  r4
-    ret
+		pop  r1             // Restore original buffer pointer
+		pop  r7
+		pop  r5
+		pop  r4
+		ret
 
 
 
@@ -112,7 +112,7 @@ str_rev:
 
 		addi r1, r1, #1     // start++
 		addi r2, r2, #-1    // end--
-		b    .rev_loop
+		beq r0 r0    .rev_loop
 
 	.rev_done:
 		pop  r7
