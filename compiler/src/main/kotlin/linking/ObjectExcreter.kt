@@ -30,7 +30,7 @@ class ObjectExcreter(val file: File) {
 
         return ObjectFile(
             header = header,
-            payload = machineCode,
+            payload = machineCode + 0u, // Add a nop for security. there was a very bad stack collision bug
             symbolTables = symbols,
             relocationTable = parser.relocations
         )
