@@ -346,6 +346,9 @@ private suspend fun throwRuntimeError(cpu: Cpu, e: Exception, baseAddr: UShort, 
         System.err.println("    $regName : $value ($hexVal)")
     }
     System.err.println("==================================================\n")
+    System.err.println(" History of ${cpu.history.size} entries:")
+    cpu.history.forEach { System.err.println(it) }
+    System.err.println("==================================================\n")
     printHexDump(cpu.mmu, baseAddr, machineCode.size)
     System.err.println("==================================================\n")
 
