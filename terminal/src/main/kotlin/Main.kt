@@ -4,8 +4,10 @@ import io.cuttlefish.backend.*
 import io.cuttlefish.components.*
 import io.cuttlefish.config.*
 import io.cuttlefish.linking.*
+import kotlinx.coroutines.*
 import kotlinx.serialization.*
 import kotlinx.serialization.json.*
+import sun.misc.Signal
 import java.io.*
 import kotlin.system.*
 
@@ -91,6 +93,44 @@ private fun getFileOrThrow(path: String): File {
     return file
 }
 
+private fun expandPaths(inputPaths: List<String>): List<String> {
+    val expanded = mutableListOf<String>()
+    for (path in inputPaths) {
+        val file = File(path)
+        if (file.isDirectory) {
+            file.list()?.forEach { j ->
+                expanded.add("${file.absolutePath}/$j")
+            }
+        } else {
+            expanded.add(path)
+        }
+    }
+    if (expanded.isEmpty()) throw IllegalArgumentException("No input files resolved")
+    return expanded
+}
+
+private suspend fun runCpuSafely(
+    cpu: Cpu, memory: MemoryBus, shouldDump: Boolean, dumpBaseAddr: UShort, dumpLength: Int
+) {
+    Signal.handle(Signal("INT")) { _ ->
+        runBlocking { throwRuntimeError(cpu, Exception("Keyboard Interrupt"), dumpBaseAddr, dumpLength) }
+    }
+    try {
+        while (!cpu.isHalted) {
+            cpu.tick()
+        }
+        if (shouldDump) {
+            printHexDump(memory, dumpBaseAddr, dumpLength)
+        }
+    } catch (e: Exception) {
+        throwRuntimeError(cpu, e, dumpBaseAddr, dumpLength)
+    }
+}
+
+// ---------------------------------------------------------
+// CLI Handlers
+// ---------------------------------------------------------
+
 private fun handleTokenize(args: List<String>) {
     if (args.isEmpty()) throw IllegalArgumentException("Missing input file for -t")
     val file = getFileOrThrow(args[0])
@@ -121,36 +161,18 @@ private fun handleBuild(args: List<String>) {
     val outIndex = args.indexOf("-o")
     val inputPaths = if (outIndex != -1) args.subList(0, outIndex) else args
     val outPath = if (outIndex != -1 && outIndex + 1 < args.size) args[outIndex + 1] else "out.bin"
-
     if (inputPaths.isEmpty()) throw IllegalArgumentException("No input files provided")
 
-    val inputPathsAdjustedForDirectories = mutableListOf<String>()
+    val expandedPaths = expandPaths(inputPaths)
+    val objects = expandedPaths.map { path -> ObjectExcreter(getFileOrThrow(path)).generate() }
 
-    for (path in inputPaths) {
-        if (File(path).isDirectory) {
-            val list = File(path).list()
-            if (list != null) {
-                for (j in list) {
-                    inputPathsAdjustedForDirectories.add("${File(path).absolutePath}/$j")
-                }
-            }
-        } else {
-            inputPathsAdjustedForDirectories.add(path)
-        }
-    }
-
-    val objects = inputPathsAdjustedForDirectories.map { path ->
-        val file = getFileOrThrow(path)
-        ObjectExcreter(file).generate()
-    }
     val baseAddr = MemoryMapRanges.userLandRange.first // 0x3000
 
     val linker = Linker(*objects.toTypedArray(), baseAddress = baseAddr.toUShort())
     val p1 = linker.passOne()
     val finalBinary = linker.passTwo(p1)
 
-    val outFile = File(outPath)
-    outFile.writeText("@$baseAddr\n" + finalBinary.joinToString("\n"))
+    File(outPath).writeText("@$baseAddr\n" + finalBinary.joinToString("\n"))
 }
 
 private suspend fun handleCompileAndRun(args: List<String>) {
@@ -160,38 +182,13 @@ private suspend fun handleCompileAndRun(args: List<String>) {
     val outIndex = args.indexOf("-o")
     val outPath = if (outIndex != -1 && outIndex + 1 < args.size) args[outIndex + 1] else "out.hex"
 
-    val cleanArgs = args.filter { it != "--dump" }.toMutableList()
-
-    if (outIndex != -1) {
-        cleanArgs.removeAt(outIndex)
-        cleanArgs.removeAt(outIndex)
+    // Safe argument extraction
+    val cleanArgs = args.filterIndexed { index, arg ->
+        arg != "--dump" && !(outIndex != -1 && (index == outIndex || index == outIndex + 1))
     }
 
-    val inputPathsAdjustedForDirectories = mutableListOf<String>()
-
-    // Parse files and directories recursively exactly like handleBuild!!
-    for (path in cleanArgs) {
-        val file = File(path)
-        if (file.isDirectory) {
-            val list = file.list()
-            if (list != null) {
-                for (j in list) {
-                    inputPathsAdjustedForDirectories.add("${file.absolutePath}/$j")
-                }
-            }
-        } else {
-            inputPathsAdjustedForDirectories.add(path)
-        }
-    }
-
-    if (inputPathsAdjustedForDirectories.isEmpty()) {
-        throw IllegalArgumentException("No input files resolved")
-    }
-
-    val objects = inputPathsAdjustedForDirectories.map { path ->
-        val file = getFileOrThrow(path)
-        ObjectExcreter(file).generate()
-    }
+    val expandedPaths = expandPaths(cleanArgs)
+    val objects = expandedPaths.map { path -> ObjectExcreter(getFileOrThrow(path)).generate() }
 
     val baseAddr = MemoryMapRanges.userLandRange.first // 0x3000
 
@@ -200,9 +197,9 @@ private suspend fun handleCompileAndRun(args: List<String>) {
     val machineCode = linker.passTwo(p1)
 
     if (outIndex != -1) {
-        val outFile = File(outPath)
-        outFile.writeText("@$baseAddr\n" + machineCode.joinToString("\n"))
+        File(outPath).writeText("@$baseAddr\n" + machineCode.joinToString("\n"))
     }
+
     val memory = MemoryBus(PhysicalMemory())
     for ((index, word) in machineCode.withIndex()) {
         memory.ram.internals[(baseAddr + index.toUInt()).toInt()] = word.toShort()
@@ -210,17 +207,7 @@ private suspend fun handleCompileAndRun(args: List<String>) {
 
     val cpu = Cpu(memory)
     cpu.pc = baseAddr.toUShort()
-    try {
-        while (!cpu.isHalted) {
-            cpu.tick()
-        }
-        if (shouldDump) {
-            printHexDump(memory, baseAddr.toUShort(), machineCode.size)
-
-        }
-    } catch (e: Exception) {
-        throwRuntimeError(cpu, e, baseAddr.toUShort(), machineCode)
-    }
+    runCpuSafely(cpu, memory, shouldDump, baseAddr.toUShort(), machineCode.size)
 }
 
 private suspend fun handleRun(args: List<String>) {
@@ -228,9 +215,7 @@ private suspend fun handleRun(args: List<String>) {
     val shouldDump = args.contains("--dump")
     val cleanArgs = args.filter { it != "--dump" }
 
-
     val file = getFileOrThrow(cleanArgs[0])
-
     val lines = file.readLines().filter { it.isNotBlank() }
     val baseAddress = if (lines[0].startsWith("@")) lines[0].drop(1).toShort() else 0.toShort()
     val machineCode = (if (lines[0].startsWith("@")) lines.drop(1) else lines).map { it.trim().toUShort() }
@@ -239,26 +224,16 @@ private suspend fun handleRun(args: List<String>) {
     for ((index, word) in machineCode.withIndex()) {
         memory.write((baseAddress + index).toUShort(), word.toShort())
     }
+
     val cpu = Cpu(memory)
     cpu.pc = baseAddress.toUShort()
-    try {
-        while (!cpu.isHalted) {
-            cpu.tick()
-        }
-        if (shouldDump) {
-            printHexDump(memory, baseAddress.toUShort(), machineCode.size)
-
-        }
-    } catch (e: Exception) {
-        throwRuntimeError(cpu, e, baseAddress.toUShort(), machineCode.toTypedArray())
-    }
+    runCpuSafely(cpu, memory, shouldDump, baseAddress.toUShort(), machineCode.size)
 }
 
 private suspend fun handleRunOs(args: List<String>) {
     if (args.size < 2) throw IllegalArgumentException("Missing kernel or main file.\nUsage: lx -os <kernel.lx> <main.lx>")
     val shouldDump = args.contains("--dump")
     val cleanArgs = args.filter { it != "--dump" }
-
 
     val kernelFile = getFileOrThrow(cleanArgs[0])
     val mainFile = getFileOrThrow(cleanArgs[1])
@@ -276,18 +251,7 @@ private suspend fun handleRunOs(args: List<String>) {
     }
 
     val cpu = Cpu(memory)
-    try {
-        while (!cpu.isHalted) {
-            cpu.tick()
-        }
-        if (shouldDump) {
-            printHexDump(memory, MemoryMapRanges.userLandRange.first.toUShort(), mainCode.size)
-
-        }
-    } catch (e: Exception) {
-        throwRuntimeError(cpu, e, MemoryMapRanges.userLandRange.first.toUShort(), mainCode.toTypedArray())
-    }
-
+    runCpuSafely(cpu, memory, shouldDump, MemoryMapRanges.userLandRange.first.toUShort(), mainCode.size)
 }
 
 private fun handleDecode(args: List<String>) {
@@ -299,7 +263,6 @@ private fun handleDecode(args: List<String>) {
     val parse = Backend().decode(linesInfo.map { it.toUShort() })
     parse.forEachIndexed { index, instruction -> println("$index | $instruction") }
 }
-
 
 private suspend fun handleHexDumpFile(args: List<String>) {
     if (args.isEmpty()) throw IllegalArgumentException("Missing input file for -x")
@@ -318,9 +281,10 @@ private suspend fun handleHexDumpFile(args: List<String>) {
 
     val length = if (args.size >= 2) args[1].toUShort() else machineCode.size.toUShort()
     val string = printHexDump(memory, baseAddress.toUShort(), length.toInt(), true)!!
-    File(outPath).writeText(string)
 
-
+    if (outIndex != -1) {
+        File(outPath).writeText(string)
+    }
 }
 
 
@@ -345,7 +309,7 @@ fun loadConfig() {
     GlobalConfig.debug = config.debug
 }
 
-private suspend fun throwRuntimeError(cpu: Cpu, e: Exception, baseAddr: UShort, machineCode: Array<UShort>) {
+private suspend fun throwRuntimeError(cpu: Cpu, e: Exception, baseAddr: UShort, dumpLength: Int) {
     System.err.println("==================================================")
     System.err.println("          !!! CPU HARDWARE EXCEPTION !!!          ")
     System.err.println("==================================================")
@@ -364,13 +328,11 @@ private suspend fun throwRuntimeError(cpu: Cpu, e: Exception, baseAddr: UShort, 
     System.err.println(" History of ${cpu.history.size} entries:")
     cpu.history.forEach { System.err.println("    $it") }
     System.err.println("==================================================\n")
-    printHexDump(cpu.mmu, baseAddr, machineCode.size)
+    printHexDump(cpu.mmu, baseAddr, dumpLength)
     System.err.println("==================================================\n")
-
 
     exitProcess(1)
 }
-
 
 suspend fun printHexDump(memory: MemoryBus, startAddress: UShort, length: Int, returnData: Boolean = false): String? {
     val start = startAddress.toInt() and 0xFFFF
@@ -391,7 +353,6 @@ suspend fun printHexDump(memory: MemoryBus, startAddress: UShort, length: Int, r
     val rightDashes = "-".repeat(dashCount - (dashCount / 2))
     val borderLine = "-".repeat(totalLineWidth)
 
-    // 3. Build the dynamic column indices (0, 1, 2...)!!
     val colsBuilder = java.lang.StringBuilder()
     for (i in 0 until wordsPerRow) {
         colsBuilder.append(i.toString().padEnd(5))
@@ -399,13 +360,11 @@ suspend fun printHexDump(memory: MemoryBus, startAddress: UShort, length: Int, r
     val colsStr = colsBuilder.toString()
     val columnLabels = "$prefix$colsStr| ASCII"
 
-    // Print the dynamic header dashboard!!
     System.err.println(borderLine)
     System.err.println("$leftDashes$title$rightDashes")
     System.err.println(columnLabels)
     System.err.println(borderLine)
 
-    // Align start address to 8-word boundary
     val alignedStart = start - (start % 8)
 
     for (addr in alignedStart..end step wordsPerRow) {
@@ -418,7 +377,7 @@ suspend fun printHexDump(memory: MemoryBus, startAddress: UShort, length: Int, r
             val word = try {
                 memory.read(currentAddr.toUShort()).toInt() and 0xFFFF
             } catch (e: Exception) {
-                0x0000 // Return zero if memory address is unreadable
+                0x0000
             }
 
             wordsHex.append(word.toString(16).uppercase().padStart(4, '0')).append(" ")
