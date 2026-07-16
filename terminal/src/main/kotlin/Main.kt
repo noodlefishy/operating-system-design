@@ -156,8 +156,16 @@ private fun handleBuild(args: List<String>) {
 private suspend fun handleCompileAndRun(args: List<String>) {
     if (args.isEmpty()) throw IllegalArgumentException("Missing input files for -i")
     val shouldDump = args.contains("--dump")
-    val cleanArgs = args.filter { it != "--dump" }
 
+    val outIndex = args.indexOf("-o")
+    val outPath = if (outIndex != -1 && outIndex + 1 < args.size) args[outIndex + 1] else "out.hex"
+
+    val cleanArgs = args.filter { it != "--dump" }.toMutableList()
+
+    if (outIndex != -1) {
+        cleanArgs.removeAt(outIndex)
+        cleanArgs.removeAt(outIndex)
+    }
 
     val inputPathsAdjustedForDirectories = mutableListOf<String>()
 
@@ -190,9 +198,11 @@ private suspend fun handleCompileAndRun(args: List<String>) {
     val linker = Linker(*objects.toTypedArray(), baseAddress = baseAddr.toUShort())
     val p1 = linker.passOne()
     val machineCode = linker.passTwo(p1)
-    val outFile = File("out.bin")
-    outFile.writeText("@$baseAddr\n" + machineCode.joinToString("\n"))
 
+    if (outIndex != -1) {
+        val outFile = File(outPath)
+        outFile.writeText("@$baseAddr\n" + machineCode.joinToString("\n"))
+    }
     val memory = MemoryBus(PhysicalMemory())
     for ((index, word) in machineCode.withIndex()) {
         memory.ram.internals[(baseAddr + index.toUInt()).toInt()] = word.toShort()
@@ -307,7 +317,8 @@ private suspend fun handleHexDumpFile(args: List<String>) {
     }
 
     val length = if (args.size >= 2) args[1].toUShort() else machineCode.size.toUShort()
-    printHexDump(memory, baseAddress.toUShort(), length.toInt())
+    val string = printHexDump(memory, baseAddress.toUShort(), length.toInt(), true)!!
+    File(outPath).writeText(string)
 
 
 }
