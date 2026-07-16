@@ -10,11 +10,11 @@
   },
   "debug": {
     "printHex16Dump": true,
-    "use16wordAddressInDump": false,
+    "use16wordAddressInDump": true,
     "printHistory": false,
-    "printInstructions": true,
+    "printInstructions": false,
     "printRegistersOnHalt": true,
-    "printState": true,
+    "printState": false,
     "mapFile": "out.map",
     "useMap:": true
   }

@@ -354,15 +354,15 @@ suspend fun printHexDump(memory: MemoryBus, startAddress: UShort, length: Int, r
 
     val colsBuilder = java.lang.StringBuilder()
     for (i in 0 until wordsPerRow) {
-        colsBuilder.append(i.toString().padEnd(5))
+        colsBuilder.append(i.toString(radix = 16).uppercase().padEnd(5))
     }
     val colsStr = colsBuilder.toString()
     val columnLabels = "$prefix$colsStr| ASCII"
 
-    System.err.println(borderLine)
-    System.err.println("$leftDashes$title$rightDashes")
-    System.err.println(columnLabels)
-    System.err.println(borderLine)
+    val line = "$borderLine\n$leftDashes$title$rightDashes\n$columnLabels\n$borderLine\n"
+    returnD += line
+
+    System.err.print(line)
 
     val alignedStart = start - (start % 8)
 

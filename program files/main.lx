@@ -1,21 +1,41 @@
 main:
     movi r6, [stack]
 
-	movi r1 [array]
-    lw r2 [r1 + 0]
-    push r2
-    lw r1 [r1 + 1]
-    movi r2 [itoaBuffer1]
-    call itoa
-    pop r1
-   	movi r2 [itoaBuffer2]
-    call itoa
-    call str_cat
-    call prints
+	movi r1 numbers
+	lw r1 [r1 + 1]
+	movi r2 [itoaBuffer1]
+
+	call itoa
+	push r1
+
+//	movi r1 numbers
+//	lw r1 [r1 + 0]
+//	movi r2 [itoaBuffer2]
+//
+//	call itoa
+//	pop r2
+	movi r1 [plus_str]
+	lw r1 [r1 + 0]
+
+	pop r2
+
+	call str_cat
+
+	call prints
+
+
+
+
+
+
 
     halt
 
 
+space:
+	.fill " "
+	.space 7
+s2: .fill "World!"
 itoaBuffer1: .space 13
 itoaBuffer2: .space 6
 
