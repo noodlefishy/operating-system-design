@@ -41,7 +41,6 @@ suspend fun main(args: Array<String>) {
         exitProcess(0)
     }
     loadConfig()
-    println("config")
     val command = args[0]
     val remainingArgs = args.drop(1)
 
@@ -295,6 +294,10 @@ private fun handleDecode(args: List<String>) {
 private suspend fun handleHexDumpFile(args: List<String>) {
     if (args.isEmpty()) throw IllegalArgumentException("Missing input file for -x")
     val file = getFileOrThrow(args[0])
+
+    val outIndex = args.indexOf("-o")
+    val outPath = if (outIndex != -1 && outIndex + 1 < args.size) args[outIndex + 1] else "out.hex"
+
     val lines = file.readLines().filter { it.isNotBlank() }
     val baseAddress = if (lines[0].startsWith('@')) lines[0].drop(1).toShort() else 0.toShort()
     val machineCode = (if (lines[0].startsWith('@')) lines.drop(1) else lines).map { it.trim().toUShort() }
@@ -358,57 +361,48 @@ private suspend fun throwRuntimeError(cpu: Cpu, e: Exception, baseAddr: UShort, 
 }
 
 
-suspend fun printHexDump(memory: MemoryBus, startAddress: UShort, length: Int) {
+suspend fun printHexDump(memory: MemoryBus, startAddress: UShort, length: Int, returnData: Boolean = false): String? {
     val start = startAddress.toInt() and 0xFFFF
     val end = (start + length) and 0xFFFF
-
+    var returnD = ""
     val use16 = GlobalConfig.debug.printHex16Dump
     val word16 = GlobalConfig.debug.use16wordAddressInDump
-    val extraSpacing = if (word16) 4 else 4
-    val print16 =
-        """
-        ${if (use16) "-".repeat(8 * extraSpacing) else ""}------------------------------------------ POST HEX DUMP 0x00FU ----------------------------------------${
-            if (use16) "-".repeat(
-                8 * extraSpacing
-            ) else ""
-        }
-        ADDR  | 0    1    2    3    4    5    6    7    8    9   10   11   12   13   14   15  |      ${
-            if (use16) " ".repeat(
-                4 * extraSpacing
-            ) else ""
-        }ASCII      
-        ${if (use16) "-".repeat(8 * extraSpacing) else ""}--------------------------------------------------------------------------------------------------------${
-            if (use16) "-".repeat(
-                8 * extraSpacing
-            ) else ""
-        }
-        """.trimIndent()
 
-    val print8 = $$"""
-        ........
-        $${if (use16) "-".repeat(4 * extraSpacing) else ""}-------------------- POST HEX DUMP 0x00FU --------------$${
-        if (use16) "-".repeat(
-            4 * extraSpacing
-        ) else ""
+    val wordsPerRow = if (use16) 16 else 8
+    val asciiWidth = if (word16) wordsPerRow else wordsPerRow * 2
+    val prefix = "ADDR: "
+    val separator = "| "
+    val totalLineWidth = prefix.length + (wordsPerRow * 5) + separator.length + asciiWidth
+
+    val title = " POST HEX DUMP 0x00FU "
+    val dashCount = (totalLineWidth - title.length).coerceAtLeast(0)
+    val leftDashes = "-".repeat(dashCount / 2)
+    val rightDashes = "-".repeat(dashCount - (dashCount / 2))
+    val borderLine = "-".repeat(totalLineWidth)
+
+    // 3. Build the dynamic column indices (0, 1, 2...)!!
+    val colsBuilder = java.lang.StringBuilder()
+    for (i in 0 until wordsPerRow) {
+        colsBuilder.append(i.toString().padEnd(5))
     }
-        ADDR  | 0    1    2    3    4    5    6    7    |  $${if (use16) " ".repeat(2 * extraSpacing) else ""}ASCII
-        $${if (use16) "-".repeat(4 * extraSpacing) else ""}--------------------------------------------------------$${
-        if (use16) "-".repeat(
-            4 * extraSpacing
-        ) else ""
-    }
-        """.trimIndent()
+    val colsStr = colsBuilder.toString()
+    val columnLabels = "$prefix$colsStr| ASCII"
 
-//    if (use16) System.err.println(print16) else System.err.println(print8)
+    // Print the dynamic header dashboard!!
+    System.err.println(borderLine)
+    System.err.println("$leftDashes$title$rightDashes")
+    System.err.println(columnLabels)
+    System.err.println(borderLine)
 
+    // Align start address to 8-word boundary
     val alignedStart = start - (start % 8)
 
-    for (addr in alignedStart..end step if (use16) 16 else 8) {
+    for (addr in alignedStart..end step wordsPerRow) {
         val hexAddr = addr.toString(16).uppercase().padStart(4, '0')
-        val wordsHex = StringBuilder()
-        val asciiChars = StringBuilder()
+        val wordsHex = java.lang.StringBuilder()
+        val asciiChars = java.lang.StringBuilder()
 
-        for (i in 0 until if (use16) 16 else 8) {
+        for (i in 0 until wordsPerRow) {
             val currentAddr = (addr + i).toShort()
             val word = try {
                 memory.read(currentAddr.toUShort()).toInt() and 0xFFFF
@@ -418,8 +412,7 @@ suspend fun printHexDump(memory: MemoryBus, startAddress: UShort, length: Int) {
 
             wordsHex.append(word.toString(16).uppercase().padStart(4, '0')).append(" ")
 
-
-            if (GlobalConfig.debug.use16wordAddressInDump) {
+            if (word16) {
                 asciiChars.append(if (word in 32..126) word.toChar() else '.')
             } else {
                 val highByte = (word ushr 8) and 0xFF
@@ -429,8 +422,12 @@ suspend fun printHexDump(memory: MemoryBus, startAddress: UShort, length: Int) {
                 asciiChars.append(if (lowByte in 32..126) lowByte.toChar() else '.')
             }
         }
-
-        System.err.println("$hexAddr: $wordsHex| $asciiChars")
+        val lineOutput = "$hexAddr: $wordsHex| $asciiChars"
+        returnD += "$lineOutput\n"
+        System.err.println(lineOutput)
     }
-//    if (use16) System.err.println(print16.split('\n').last()) else System.err.println(print8.split('\n').last())
+
+    System.err.println(borderLine)
+
+    return if (returnData) returnD else null
 }

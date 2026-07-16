@@ -96,7 +96,8 @@ divide:
 
 
 
-
+// If R1 is more than R2 = 0
+// If R1 is less than R2 = -32768 (0x8000)
 lessThan:
     nand r2 r2 r2
     addi r2 r2 1

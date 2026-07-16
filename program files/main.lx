@@ -2,19 +2,33 @@ main:
     movi r6, [stack]
 
 	movi r1 [array]
-	movi r2 100
+    lw r2 [r1 + 0]
+    push r2
+    lw r1 [r1 + 1]
+    movi r2 [itoaBuffer1]
+    call itoa
+    pop r1
+   	movi r2 [itoaBuffer2]
+    call itoa
+    call str_cat
+    call prints
 
-	sw r2 [r1 + #0] // array[0] = 10
-
-	lw r1 [r1 + #0]
-
-	call itoa
-//	call prints
-	halt
+    halt
 
 
+itoaBuffer1: .space 13
+itoaBuffer2: .space 6
+
+
+numbers:
+	.fill 10 // Number 1
+	.fill 20 // Number 2
+
+plus_str: .fill " + "
+equals_str: .fill " = "
+newline_str: .fill "\n"
 array:
-	.space 10
+    .space 4
 
 .space 30
 stack:
