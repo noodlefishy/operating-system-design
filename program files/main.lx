@@ -1,16 +1,15 @@
 main:
     movi r6, [stack]
 
-	movi r1 2748
-	movi r2 [string_1]
+	movi r1 [spaceForMagic]
 	call itox
 	call prints
 
     halt
 
 
-string_1:
-	.space 4
+spaceForMagic:
+	.space 30
 	.space 0
 string_2:
 	.fill "World!"

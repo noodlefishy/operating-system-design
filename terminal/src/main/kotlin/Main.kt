@@ -190,6 +190,8 @@ private suspend fun handleCompileAndRun(args: List<String>) {
     val linker = Linker(*objects.toTypedArray(), baseAddress = baseAddr.toUShort())
     val p1 = linker.passOne()
     val machineCode = linker.passTwo(p1)
+    val outFile = File("out.bin")
+    outFile.writeText("@$baseAddr\n" + machineCode.joinToString("\n"))
 
     val memory = MemoryBus(PhysicalMemory())
     for ((index, word) in machineCode.withIndex()) {
