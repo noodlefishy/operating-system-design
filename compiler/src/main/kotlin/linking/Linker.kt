@@ -3,6 +3,7 @@ package io.cuttlefish.linking
 import io.cuttlefish.*
 import io.cuttlefish.backend.*
 import io.cuttlefish.components.*
+import io.cuttlefish.config.GlobalConfig
 import kotlinx.serialization.*
 import kotlinx.serialization.json.*
 import java.io.*
@@ -45,7 +46,7 @@ class Linker(vararg objectFiles: ObjectFile, baseAddress: UShort = 0x3000u) {
         val layout = assignLayout()
         val absolute = generateSymbolTable(layout)
         @Suppress("JSON_FORMAT_REDUNDANT")
-        File("out.map").writeText(Json { prettyPrint = true }.encodeToString(absolute))
+        File(GlobalConfig.debug.mapFile).writeText(Json { prettyPrint = true }.encodeToString(absolute))
         return absolute
     }
 

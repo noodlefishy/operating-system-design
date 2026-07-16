@@ -15,14 +15,13 @@ class Cpu(val mmu: MemoryBus) {
     var isHalted = false
     var isKernelMode = true        // Flag to track CPU privilege level
     private val backend = Backend()
-    val history = ArrayDeque<String>(50)
+    val history = ArrayDeque<String>(10000)
     private var registerEdit = registers::oldWrite
     private var oldRegisterEdit: Pair<RegisterType, Short>? = null
 
     init {
 
     }
-
 
     private val mapFile = if (GlobalConfig.debug.useMap) {
         try {
@@ -53,7 +52,6 @@ class Cpu(val mmu: MemoryBus) {
             throw IllegalStateException("Segmentation Fault!! User-mode programme attempted to execute instruction at protected address $hexAddress")
         }
 
-
         // 1. FETCH
         val rawInstruction = mmu.read(pc)
         val currentPc = pc
@@ -66,10 +64,20 @@ class Cpu(val mmu: MemoryBus) {
             println(formatInstruction(currentPc, instruction))
         }
 
+        // Trap Handling
         if (instruction is Instruction.Jalr && instruction.immediate != 0.toShort()) {
             val trapId = instruction.immediate
-            if (trapId == 1.toShort()) {
+            val trapName = when(trapId.toInt()) {
+                1 -> "HALT"
+                15 -> "RTI"
+                else -> "SYSCALL $trapId"
+            }
 
+            // Log the Trap to history before returning!
+            if (history.size >= 10000) history.removeFirst()
+            history.addLast("${getLabelOrHex(currentPc)} | ${instruction.toString().padEnd(25)} | TRAP: $trapName")
+
+            if (trapId == 1.toShort()) {
                 if (GlobalConfig.debug.printHistory) {
                     history.forEach { println(it) }
                 } else if (GlobalConfig.debug.printRegistersOnHalt) {
@@ -79,7 +87,7 @@ class Cpu(val mmu: MemoryBus) {
                 return
             }
 
-            // Trap ID 15: Special RTI/RFE instruction (explained in Phase 3!)
+            // Trap ID 15: Special RTI/RFE instruction
             if (trapId == 15.toShort()) {
                 handleRti()
                 return
@@ -88,10 +96,6 @@ class Cpu(val mmu: MemoryBus) {
             handleTrap(trapId)
             return
         }
-
-        if (history.size == 50) history.removeFirst()
-        history.addLast("${getLabelOrHex(pc)} | $instruction | $registers")
-
 
         // 3. EXECUTE
         when (instruction) {
@@ -105,34 +109,35 @@ class Cpu(val mmu: MemoryBus) {
             is Instruction.Sw -> handleSw(instruction)
             is Instruction.DataWord -> error("The data-words like .fill and .space shouldn't be there?")
         }
-        if (GlobalConfig.debug.printState) {
-//            println(registerEdit.get())
-//            println(oldRegisterEdit)
-            if (registerEdit.get() != oldRegisterEdit) {
-                val reg = oldR[registerEdit.get().first.ordinal]
-                val newValue = registerEdit.get().second
 
-                // Convert to Int and apply 16-bit mask to handle negative numbers correctly
-                val regInt = reg.toInt()
-                val newValInt = newValue.toInt()
+        var stateChangeStr = "No register change"
 
-                val regHex = (regInt and 0xFFFF).toString(16).padStart(4, '0').uppercase()
-                val hexValue = (newValInt and 0xFFFF).toString(16).padStart(4, '0').uppercase()
+        if (registerEdit.get() != oldRegisterEdit) {
+            val reg = oldR[registerEdit.get().first.ordinal]
+            val newValue = registerEdit.get().second
 
-                // Align fields by padding them to a fixed width
-                val regName = registerEdit.get().first.toString().padEnd(3)
-                val oldDecStr = "#$reg".padEnd(7)
-                val newDecStr = "#$newValue".padEnd(7)
+            val regInt = reg.toInt()
+            val newValInt = newValue.toInt()
 
-                println(
-                    "${getLabelOrHex(pc)} | $regName (0x$regHex / $oldDecStr)  <- $newDecStr (0x$hexValue)"
-                )
+            val regHex = (regInt and 0xFFFF).toString(16).padStart(4, '0').uppercase()
+            val hexValue = (newValInt and 0xFFFF).toString(16).padStart(4, '0').uppercase()
+
+            val regName = registerEdit.get().first.toString().padEnd(3)
+            val oldDecStr = "#$reg".padEnd(7)
+            val newDecStr = "#$newValue".padEnd(7)
+
+            stateChangeStr = "$regName (0x$regHex / $oldDecStr)  <- $newDecStr (0x$hexValue)"
+
+            if (GlobalConfig.debug.printState) {
+                println("${getLabelOrHex(currentPc)} | $stateChangeStr")
             }
         }
 
+        // Add to execution trace
+        if (history.size >= 10000) history.removeFirst()
+        history.addLast("${getLabelOrHex(currentPc)} | ${instruction.toString().padEnd(25)} | $stateChangeStr")
 
         oldRegisterEdit = registerEdit.get()
-
     }
 
     private fun formatInstruction(pc: UShort, inst: Instruction): String {

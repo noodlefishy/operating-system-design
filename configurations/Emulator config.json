@@ -15,7 +15,7 @@
     "printInstructions": false,
     "printRegistersOnHalt": true,
     "printState": false,
-    "mapFile": "out.map",
+    "mapFile": "debug/linker/out.map",
     "useMap:": true
   }
 }

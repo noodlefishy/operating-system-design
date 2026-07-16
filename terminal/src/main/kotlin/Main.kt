@@ -7,7 +7,7 @@ import io.cuttlefish.linking.*
 import kotlinx.coroutines.*
 import kotlinx.serialization.*
 import kotlinx.serialization.json.*
-import sun.misc.Signal
+import sun.misc.*
 import java.io.*
 import kotlin.system.*
 
@@ -30,7 +30,7 @@ fun printUsage() {
           -h, --help                           Show this help menu.
           --dump                               Prints the hex dump to the console on completion.
           --debug                              Generates full debug files based on output name:
-                                               (.disasm, .hex, .map.json, .regs). Works on crashes too!
+                                               (.disasm, .hex, .map, .regs). Works on crashes too!
           
         Examples:
           lx -i main.lx "program files/lib" -o program.bin --debug
@@ -221,7 +221,8 @@ private suspend fun handleCompileAndRun(args: List<String>) {
 
     // Save binary if -o is specified, OR if we are generating debug files
     if (outIndex != -1 || isDebug) {
-        File(outPath).writeText("@$baseAddr\n" + machineCode.joinToString("\n"))
+        val inPath = if (isDebug) "debug/$outPath.bin" else "$outPath.bin"
+        File(inPath).writeText("@$baseAddr\n" + machineCode.joinToString("\n"))
     }
 
     if (isDebug) {
@@ -324,7 +325,13 @@ private suspend fun handleHexDumpFile(args: List<String>) {
     val length = machineCode.size.toUShort()
 
     // Set printToConsole to true ONLY if we aren't outputting to a file.
-    val string = printHexDump(memory, baseAddress.toUShort(), length.toInt(), returnData = true, printToConsole = outIndex == -1)!!
+    val string = printHexDump(
+        memory,
+        baseAddress.toUShort(),
+        length.toInt(),
+        returnData = true,
+        printToConsole = outIndex == -1
+    )!!
 
     if (outIndex != -1) {
         File(outPath).writeText(string)
@@ -340,10 +347,9 @@ private suspend fun generateDebugFiles(
     cpu: Cpu?,
     memory: MemoryBus?
 ) {
-    // 1. Symbol Map (.map.json)
     if (map != null) {
         val json = Json { prettyPrint = true }
-        File("$baseName.map.json").writeText(json.encodeToString(map))
+        File("debug/$baseName.map").writeText(json.encodeToString(map))
     }
 
     // 2. Disassembled Instructions (.disasm)
@@ -353,13 +359,12 @@ private suspend fun generateDebugFiles(
             val addr = (baseAddr + index.toUInt()).toString(16).uppercase().padStart(4, '0')
             "0x$addr | $inst"
         }.joinToString("\n")
-        File("$baseName.disasm").writeText(disasmText)
+        File("debug/$baseName.disasm").writeText(disasmText)
     }
 
-    // 3. Hex Dump of actual memory memory state (.hex)
     if (memory != null) {
         val hexString = printHexDump(memory, baseAddr, machineCode.size, returnData = true, printToConsole = false)!!
-        File("$baseName.hex").writeText(hexString)
+        File("debug/$baseName.hex").writeText(hexString)
     }
 
     // 4. Register State & Run History (.regs)
@@ -379,7 +384,7 @@ private suspend fun generateDebugFiles(
         regsText.append("\n--- CPU History (Last ${cpu.history.size} steps) ---\n")
         cpu.history.forEach { regsText.append(it).append("\n") }
 
-        File("$baseName.regs").writeText(regsText.toString())
+        File("debug/$baseName.regs").writeText(regsText.toString())
     }
 }
 
@@ -430,7 +435,13 @@ private suspend fun throwRuntimeError(cpu: Cpu, e: Exception, baseAddr: UShort, 
     exitProcess(1)
 }
 
-suspend fun printHexDump(memory: MemoryBus, startAddress: UShort, length: Int, returnData: Boolean = false, printToConsole: Boolean = true): String? {
+suspend fun printHexDump(
+    memory: MemoryBus,
+    startAddress: UShort,
+    length: Int,
+    returnData: Boolean = false,
+    printToConsole: Boolean = true
+): String? {
     val start = startAddress.toInt() and 0xFFFF
     val end = (start + length) and 0xFFFF
     var returnD = ""
