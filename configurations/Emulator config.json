@@ -5,16 +5,16 @@
     "memoryWriteTimeMs": 10,
     "registerReadTimeMs": 0,
     "registerWriteTimeMs": 0,
-    "deviceConsoleWriteTimeMs": 5,
+    "deviceConsoleWriteTimeMs": 0,
     "deviceConsoleReadTimeMs": 0
   },
   "debug": {
     "printHex16Dump": true,
     "use16wordAddressInDump": false,
     "printHistory": false,
-    "printInstructions": false,
+    "printInstructions": true,
     "printRegistersOnHalt": true,
-    "printState": false,
+    "printState": true,
     "mapFile": "out.map",
     "useMap:": true
   }

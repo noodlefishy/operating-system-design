@@ -1,19 +1,20 @@
 main:
     movi r6, [stack]
 
-	movi r1 [spaceForMagic]
-	call itox
-	call prints
+	movi r1 [array]
+	movi r2 100
 
-    halt
+	sw r2 [r1 + #0] // array[0] = 10
+
+	lw r1 [r1 + #0]
+
+	call itoa
+//	call prints
+	halt
 
 
-spaceForMagic:
-	.space 30
-	.space 0
-string_2:
-	.fill "World!"
-
+array:
+	.space 10
 
 .space 30
 stack:

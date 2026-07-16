@@ -36,11 +36,13 @@ fun printUsage() {
 }
 
 suspend fun main(args: Array<String>) {
+    println("xxx")
     if (args.isEmpty() || args[0] in listOf("-h", "--help", "help")) {
         printUsage()
         exitProcess(0)
     }
     loadConfig()
+    println("config")
     val command = args[0]
     val remainingArgs = args.drop(1)
 
@@ -195,7 +197,7 @@ private suspend fun handleCompileAndRun(args: List<String>) {
 
     val memory = MemoryBus(PhysicalMemory())
     for ((index, word) in machineCode.withIndex()) {
-        memory.write((baseAddr + index.toUInt()).toUShort(), word.toShort())
+        memory.ram.internals[(baseAddr + index.toUInt()).toInt()] = word.toShort()
     }
 
     val cpu = Cpu(memory)
