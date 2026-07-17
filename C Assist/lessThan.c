@@ -13,8 +13,8 @@ uint16_t lessThan(uint16_t r1, uint16_t r2) {
 }
 
 int main() {
-    uint16_t a = 50;
-    uint16_t b = 10;
+    uint16_t a = 5;// r1
+    uint16_t b = 10; // r2
 
     uint16_t result = lessThan(a, b);
 
