@@ -79,7 +79,7 @@ memory:
 
 ```bash
 # PS: This might not work every commit so try and make your own !!
-./lx -i Hello_World.lx
+./lx -i "examples/2. Abstracted hello world.lx" "program files/lib/io.lx"
 ```
 
 ---

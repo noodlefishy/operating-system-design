@@ -1,0 +1,11 @@
+main:
+    movi r6, stack
+    movi r1, string
+    call prints
+    halt
+
+string:
+    .fill "Hello World!!!\n"
+
+.space 20
+stack:
