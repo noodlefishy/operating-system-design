@@ -70,14 +70,22 @@ class Parser(val file: File, val baseAddress: Short) {
             val noComment = line.split(delimiters = arrayOf("//"))[0].trim()
             if (noComment.isEmpty()) return@forEachIndexed
 
-            // 2. Preprocess syntax (strip brackets, commas, plus signs, immediate hashes)
-            val cleanLine =
-                noComment.replace("[", " ").replace("]", " ").replace("+", " ").replace(",", " ").replace("#", " ")
-                    .trim()
+            // 2. Preprocess syntax (protect strings from being mangled!!)
+            val cleanLine = if (noComment.contains(".fill") && noComment.contains("\"")) {
+                noComment // Skip replacement to protect the raw string!!
+            } else {
+                noComment
+                    .replace("[", " ")
+                    .replace("]", " ")
+                    .replace("+", " ")
+                    .replace(",", " ")
+                    .replace("#", " ")
+            }
 
-            if (cleanLine.isEmpty()) return@forEachIndexed
+            val cleanTrimmed = cleanLine.trim()
+            if (cleanTrimmed.isEmpty()) return@forEachIndexed
 
-            val tokens = cleanLine.split(Regex("\\s+")).filter { it.isNotEmpty() }
+            val tokens = cleanTrimmed.split(Regex("\\s+")).filter { it.isNotEmpty() }
             if (tokens.isEmpty()) return@forEachIndexed
 
             // 3. Handle block comments (/* and */)

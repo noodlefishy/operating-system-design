@@ -1,49 +1,69 @@
 main:
     movi r6, [stack]
 
-	movi r1 numbers
-	lw r1 [r1 + 1]
-	movi r2 [itoaBuffer1]
+    movi r1, [numbers]
+    lw   r1, [r1 + 0]       // r1 = 10
+    movi r2, [itoaBuffer1]
+    call itoa               // Buffer 1 now holds: 10
 
-	call itoa
-	push r1
+    //  Append " + " to Buffer 1
+    movi r1, [itoaBuffer1]  // Destination
+    movi r2, [plus_str]     // Source
+    call str_cat            // Buffer 1 now holds: "10 + "
 
-//	movi r1 numbers
-//	lw r1 [r1 + 0]
-//	movi r2 [itoaBuffer2]
-//
-//	call itoa
-//	pop r2
-	movi r1 [plus_str]
-	lw r1 [r1 + 0]
+    // Convert 20 to string in Buffer 2 (temp)
+    movi r1, [numbers]
+    lw   r1, [r1 + 1]       // r1 = 20
+    movi r2, [itoaBuffer2]
+    call itoa               // Buffer 2 now holds: "20"
 
-	pop r2
+    // Append Buffer 2 to Buffer 1
+    movi r1, [itoaBuffer1]
+    movi r2, [itoaBuffer2]
+    call str_cat            // Buffer 1 now holds: "10 + 20"
 
-	call str_cat
+    // Append " = " to Buffer 1
+    movi r1, [itoaBuffer1]
+    movi r2, [equals_str]
+    call str_cat            // Buffer 1 now holds: "10 + 20 = "
 
-	call prints
+    // Calculate 10 + 20 = 30
+    movi r1, [numbers]
+    lw   r2, [r1 + 0]       // r2 = 10
+    lw   r3, [r1 + 1]       // r3 = 20
+    add  r1, r2, r3         // r1 = 30
 
+    // Convert 30 to string in Buffer 2
+    movi r2, [itoaBuffer2]
+    call itoa               // Buffer 2 now holds: "30"
+
+    // Append Buffer 2 to Buffer 1
+    movi r1, [itoaBuffer1]
+    movi r2, [itoaBuffer2]
+    call str_cat            // Buffer 1 now holds: "10 + 20 = 30"
+
+    // Append newline
+    movi r1, [itoaBuffer1]
+    movi r2, [newline_str]
+    call str_cat            // Buffer 1 now holds: "10 + 20 = 30\n"
+
+    // Print the final masterpiece!!
+    movi r1, [itoaBuffer1]
+    call prints
 
     halt
 
-
-space:
-	.fill " "
-	.space 7
-s2: .fill "World!"
-itoaBuffer1: .space 13
-itoaBuffer2: .space 6
-
-
+// --- Data Section ---
 numbers:
-	.fill 10 // Number 1
-	.fill 20 // Number 2
+    .fill 15 // Number 1
+    .fill 20 // Number 2
 
-plus_str: .fill " + "
-equals_str: .fill " = "
+plus_str:    .fill " + "
+equals_str:  .fill " = "
 newline_str: .fill "\n"
-array:
-    .space 4
+
+itoaBuffer1: .space 30
+itoaBuffer2: .space 10
 
 .space 30
 stack:
