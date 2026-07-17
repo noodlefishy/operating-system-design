@@ -1,9 +1,7 @@
 main:
 	movi r6 [stack]
-
 	movi r1 5 // N
 	call fib
-
 	halt
 
 
@@ -11,17 +9,12 @@ main:
 fib:
     add r1 r1 r0
     movi r2 1
-
     movi r3 0x8000 // if N < 1
-
     push r3
     call lessThan
     pop r3
-
     beq r1 r3 .done
 	beq
-
-
 	.done:
 		halt
 
