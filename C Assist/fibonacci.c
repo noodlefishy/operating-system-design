@@ -1,20 +1,20 @@
 #include <stdio.h>
 
-int nthFibonacci(int n) {
+int r1; int r2; int r3; int r4; int r5; int r6; int r7;
 
-    // base case
-    if (n <= 1){
-        return n;
-    }
-    // sum of the two preceding
-    // Fibonacci numbers
-    return nthFibonacci(n - 1) + nthFibonacci(n - 2);
+int stack[1024];
+
+void push(int value) {
+	stack[r6] = value;
+	r6++;
+}
+
+int pop() {
+	r6--;
+	return stack[r6];
 }
 
 
-int main(){
-    int n = 10;
-    int result = nthFibonacci(n);
-    printf("%d", result);
-    return 0;
+int lessThan() {
+
 }
