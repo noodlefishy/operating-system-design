@@ -2,6 +2,7 @@ package parsing
 
 import io.cuttlefish.parsing.Lexer
 import org.junit.jupiter.api.Assertions.*
+import java.awt.SystemColor.text
 import kotlin.test.Test
 
 class LexerTest {
@@ -9,19 +10,17 @@ class LexerTest {
     @Test
     fun testOnlyWhitespaceAndCommentsReturnEmpty() {
         val text = """
-            // Magical single line comment
+            // This is a single-line comment
             
-            addi r1 r2 #10 // That is some normal code
-            
-            /* Insane multiline comment!!
-                look! Im on many lines!!!
-            */
+            /* This is a 
+               multi-line block comment */
+               
         """.trimIndent()
 
         val lexer = Lexer(text)
         val tokens = lexer.tokenise()
 
-        println(tokens)
+        assertTrue(tokens.isEmpty(), "Expected all whitespace and comments to be skipped.")
 
 
     }
