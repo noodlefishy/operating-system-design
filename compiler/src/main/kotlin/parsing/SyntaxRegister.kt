@@ -1,0 +1,20 @@
+package io.cuttlefish.parsing
+
+import io.cuttlefish.parsing.rules.*
+import java.util.*
+
+class SyntaxRegister {
+    private val rules = mutableListOf<TokenRule>()
+
+    init {
+        rules += CommentsAndWhiteSpaceTokenTokenRule()
+        rules += LabelTokenRule()
+
+        val loader = ServiceLoader.load(TokenRule::class.java)
+        for (otherRule in loader) {
+            rules += otherRule
+        }
+    }
+
+
+}
