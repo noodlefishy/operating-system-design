@@ -15,7 +15,8 @@ class Cpu(val mmu: MemoryBus) {
     var isHalted = false
     var isKernelMode = true        // Flag to track CPU privilege level
     private val backend = Backend()
-    val history = ArrayDeque<String>(10000)
+    private val hMax = 50
+    val history = ArrayDeque<String>(hMax)
     private var registerEdit = registers::oldWrite
     private var oldRegisterEdit: Pair<RegisterType, Short>? = null
 
@@ -74,7 +75,7 @@ class Cpu(val mmu: MemoryBus) {
             }
 
             // Log the Trap to history before returning!
-            if (history.size >= 10000) history.removeFirst()
+            if (history.size >= hMax) history.removeFirst()
             history.addLast("${getLabelOrHex(currentPc)} | ${instruction.toString().padEnd(25)} | TRAP: $trapName")
 
             if (trapId == 1.toShort()) {
@@ -134,7 +135,7 @@ class Cpu(val mmu: MemoryBus) {
         }
 
         // Add to execution trace
-        if (history.size >= 10000) history.removeFirst()
+        if (history.size >= hMax) history.removeFirst()
         history.addLast("${getLabelOrHex(currentPc)} | ${instruction.toString().padEnd(25)} | $stateChangeStr")
 
         oldRegisterEdit = registerEdit.get()
