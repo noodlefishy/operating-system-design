@@ -7,17 +7,42 @@ main:
 
 
 fib:
-    add r1 r1 r0
-    movi r2 1
-    movi r3 0x8000 // if N < 1
-    push r3
-    call lessThan
-    pop r3
-    beq r1 r3 .done
-	beq
-	.done:
-		halt
+    push r4
+    push r5
 
+    add r4 r1 r0 // L40 .c
+    add r1 r4 r0
+	addi r2 r0 #2
+
+	call lessThan // L44 .c
+
+	beq r1 r0 .completeRecursion // Goto L49
+
+	add r1 r4 r0
+	beq r0 r0 .complete
+
+
+
+
+	.completeRecursion:
+		addi r1 r4 #-1
+		push r7 // EFF:
+		call fib // L50
+		pop r7 // EFF:
+		add r5 r1 r0
+
+
+		addi r1 r4 #-2
+		push r7
+		call fib // L54
+		pop r7
+
+		add r1 r5 r1
+
+	.complete: // L58
+		pop r5
+		pop r4
+		ret
 
 s: .fill "Oh my hats!!\n"
 

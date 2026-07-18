@@ -429,7 +429,7 @@ private suspend fun throwRuntimeError(cpu: Cpu, e: Exception, baseAddr: UShort, 
     }
     System.err.println("==================================================\n")
     System.err.println(" History of ${cpu.history.size} entries:")
-    cpu.history.forEach { System.err.println("    $it") }
+    cpu.history.toTypedArray().forEach { System.err.println("    $it") }
     System.err.println("==================================================\n")
     printHexDump(cpu.mmu, baseAddr, dumpLength, returnData = false, printToConsole = true)
     System.err.println("==================================================\n")
