@@ -21,6 +21,8 @@ object StatementRegistry {
         "lui" to { r, line, col -> RIStatement("lui", r.nextReg(), r.nextArg(), line, col) },
 
         // Macros
+        "mov" to { r, line, col -> MacroMov(r.nextReg(), r.nextReg(), line, col) },
+        "clr" to { r, line, col -> MacroClr(r.nextReg(), line, col) },
         "bne" to { r, line, col -> MacroBne(r.nextReg(), r.nextReg(), r.nextArg(), line, col) },
         "subi" to { r, line, col -> MacroSubi(r.nextReg(), r.nextReg(), r.nextArg(), line, col) },
         "sub" to { r, line, col -> MacroSub(r.nextReg(), r.nextReg(), r.nextReg(), line, col) },
