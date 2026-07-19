@@ -2,8 +2,8 @@ package io.cuttlefish.parsing
 
 class Lexer(private val source: String) {
     private var index = 0
-    private var line = 0
-    private var column = 0
+    private var line = 1
+    private var column = 1
 
     fun tokenise(): List<Token> {
         val tokens = mutableListOf<Token>()

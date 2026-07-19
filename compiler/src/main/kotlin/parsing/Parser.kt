@@ -85,9 +85,9 @@ class Parser(val file: File, val baseAddress: Short) {
                     "pop" -> MacroPop(nextReg(), opToken.line, opToken.column)
                     "movi" -> MacroMovi(nextReg(), nextArg(), opToken.line, opToken.column)
                     "call" -> MacroCall(nextArg(), opToken.line, opToken.column)
-                    "ret" -> RRIStatement("jalr", RegisterType.R0, RegisterType.R7, ImmArg(0), opToken.line, opToken.column)
-                    "halt" -> RRIStatement("jalr", RegisterType.R0, RegisterType.R0, ImmArg(1), opToken.line, opToken.column)
-                    "syscall" -> RRIStatement("jalr", RegisterType.R0, RegisterType.R0, nextArg(), opToken.line, opToken.column)
+                    "ret" -> MacroRet(opToken.line, opToken.column)
+                    "halt" -> MacroHalt(opToken.line,opToken.column)
+                    "syscall" -> MacroSyscall(nextArg(), opToken.line, opToken.column)
 
                     ".space" -> DirectiveSpace(nextArg(), opToken.line, opToken.column)
                     ".fill" -> {
