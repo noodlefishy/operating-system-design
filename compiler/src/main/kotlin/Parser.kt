@@ -3,6 +3,7 @@ package io.cuttlefish
 import io.cuttlefish.linking.*
 import java.io.*
 
+@Deprecated("BAD")
 class Parser(val file: File, val baseAddress: Short) {
 
     private val text = file.readLines()
