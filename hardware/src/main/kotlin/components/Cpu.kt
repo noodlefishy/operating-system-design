@@ -68,15 +68,17 @@ class Cpu(val mmu: MemoryBus) {
         // Trap Handling
         if (instruction is Instruction.Jalr && instruction.immediate != 0.toShort()) {
             val trapId = instruction.immediate
-            val trapName = when(trapId.toInt()) {
+            val trapName = when (trapId.toInt()) {
                 1 -> "HALT"
                 15 -> "RTI"
                 else -> "SYSCALL $trapId"
             }
 
             // Log the Trap to history before returning!
-            if (history.size >= hMax) history.removeFirst()
-            history.addLast("${getLabelOrHex(currentPc)} | ${instruction.toString().padEnd(25)} | TRAP: $trapName")
+            synchronized(history) {
+                if (history.size >= hMax) history.removeFirst()
+                history.addLast("${getLabelOrHex(currentPc)} | ${instruction.toString().padEnd(25)} | TRAP: $trapName")
+            }
 
             if (trapId == 1.toShort()) {
                 if (GlobalConfig.debug.printHistory) {
@@ -135,8 +137,10 @@ class Cpu(val mmu: MemoryBus) {
         }
 
         // Add to execution trace
-        if (history.size >= hMax) history.removeFirst()
-        history.addLast("${getLabelOrHex(currentPc)} | ${instruction.toString().padEnd(25)} | $stateChangeStr")
+        synchronized(history) {
+            if (history.size >= hMax) history.removeFirst()
+            history.addLast("${getLabelOrHex(currentPc)} | ${instruction.toString().padEnd(25)} | $stateChangeStr")
+        }
 
         oldRegisterEdit = registerEdit.get()
     }
@@ -183,7 +187,7 @@ class Cpu(val mmu: MemoryBus) {
                 // Calculate absolute target address for PC-relative branches!!
                 val target = (pc.toInt() + 1 + inst.immediate.toInt()) and 0xFFFF
                 val hexTarget = target.toString(16).uppercase().padStart(4, '0')
-                annotation = "// branch to ${mapFile.toMap().getOrDefault(target.toUShort(), null) ?: "0x$hexTarget" }"
+                annotation = "// branch to ${mapFile.toMap().getOrDefault(target.toUShort(), null) ?: "0x$hexTarget"}"
             }
 
             is Instruction.Jalr -> {

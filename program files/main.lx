@@ -1,13 +1,39 @@
 main:
     movi r6, [stack]
 
-	movi r1 5
-	movi r2 10
+	movi r1 #5
+	movi r2 #10
+	push r1
+	push r2
+	 Call feq
 
-	sub r1 r1 r2
+//	movi r7 feq
+//	jalr r7 r7 0
+
+//	beq r1 r2 #1
+//	beq r0 r0 fne
+//
+//	beq r1 r2 feq
 
 	halt
 
 
 .space 30
 stack:
+
+feq:
+	movi r1 [eq]
+
+	// ret
+	jalr r0 r7 0
+//	call prints
+//	halt
+
+
+fne:
+	movi r1 [ne]
+	call prints
+	jalr r0 r0 1
+
+ne: .fill "It is not equal"
+eq: .fill "It is equal"
