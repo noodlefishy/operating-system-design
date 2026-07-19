@@ -7,8 +7,14 @@ class SyntaxRegistry {
     val rules = mutableListOf<TokenRule>()
 
     init {
+        // DO NOT ever change this order ✨
         rules += SkipTokenRule()
+        rules += StringLiteralTokenRule()
         rules += LabelTokenRule()
+        rules += RegisterTokenRule()
+        rules += ImmediateTokenRule()
+        rules += MnemonicTokenRule()
+        rules += SymbolReferenceTokenRule()
 
         val loader = ServiceLoader.load(TokenRule::class.java)
         for (otherRule in loader) {
