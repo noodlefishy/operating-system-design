@@ -43,8 +43,11 @@ class Parser(val file: File, val baseAddress: Short) {
 
         // Parse each line into Statements
         for (lineTokens in lines) {
-            var i = 0
-            val first = lineTokens[i]
+//            var i = 0
+//            val first = lineTokens[i]
+            val reader = TokenReader(lineTokens)
+            val first = reader.peek() ?: continue
+
 
             // Labels
             if (first is LabelDefToken) {
@@ -53,57 +56,24 @@ class Parser(val file: File, val baseAddress: Short) {
                 else labelName = ctx.currentGlobalScope + labelName
 
                 ctx.symbolTable[labelName] = 0 // Placeholder size, updated in Pass 1
-                i++
+                reader.index++
             }
 
-            if (i >= lineTokens.size) continue
+            if (!reader.hasNext()) continue
 
-            val opToken = lineTokens[i]
+            val opToken = lineTokens[reader.index]
             if (opToken !is MnemonicToken) throwCompileError("Expected instruction, got '${opToken.lexeme}'", opToken.line, opToken.column)
 
-            i++
-
-            // Helpers to safely extract expected arguments
-            fun nextReg(): RegisterType {
-                val t = lineTokens.getOrNull(i++)
-                if (t is RegisterToken) return t.registerName
-                throwCompileError("Expected Register (e.g., r1-r7)", opToken.line, opToken.column)
-            }
-
-            fun nextArg(): Argument {
-                val t = lineTokens.getOrNull(i++)
-                if (t is ImmediateToken) return ImmArg(t.value)
-                if (t is SymbolReferenceToken) return SymArg(t.symbolName, t.line, t.column)
-                throwCompileError("Expected Number or Label", opToken.line, opToken.column)
-            }
+            reader.index++
 
             try {
-                val stmt = when (opToken.lexeme) {
-                    "add", "nand" -> RRRStatement(opToken.lexeme, nextReg(), nextReg(), nextReg(), opToken.line, opToken.column)
-                    "addi", "lw", "sw", "beq", "jalr" -> RRIStatement(opToken.lexeme, nextReg(), nextReg(), nextArg(), opToken.line, opToken.column)
-                    "push" -> MacroPush(nextReg(), opToken.line, opToken.column)
-                    "pop" -> MacroPop(nextReg(), opToken.line, opToken.column)
-                    "movi" -> MacroMovi(nextReg(), nextArg(), opToken.line, opToken.column)
-                    "call" -> MacroCall(nextArg(), opToken.line, opToken.column)
-                    "ret" -> MacroRet(opToken.line, opToken.column)
-                    "halt" -> MacroHalt(opToken.line,opToken.column)
-                    "syscall" -> MacroSyscall(nextArg(), opToken.line, opToken.column)
+                val builder = StatementRegistry.builders[opToken.lexeme]
+                    ?: throwCompileError("Unsupported instruction or macro '${opToken.lexeme}'", opToken.line, opToken.column)
 
-                    ".space" -> DirectiveSpace(nextArg(), opToken.line, opToken.column)
-                    ".fill" -> {
-                        val t = lineTokens.getOrNull(i)
-                        if (t is StringLiteralToken) {
-                            i++
-                            DirectiveFillString(t.text, opToken.line, opToken.column)
-                        } else {
-                            DirectiveFillImmediate(nextArg(), opToken.line, opToken.column)
-                        }
-                    }
-                    else -> throwCompileError("Unsupported instruction '${opToken.lexeme}'", opToken.line, opToken.column)
-                }
+                val stmt = builder(reader, opToken.line, opToken.column)
                 statements.add(stmt)
-            } catch (e: Exception) {
-                // Catches AST init errors
+
+            } catch (e: SyntaxException) {
                 throwCompileError(e.message ?: "Syntax Error", opToken.line, opToken.column)
             }
         }
