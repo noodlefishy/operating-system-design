@@ -1,8 +1,12 @@
-package io.cuttlefish.parsing
-
-import io.cuttlefish.RegisterType
 import io.cuttlefish.MagicValues
-import kotlin.test.Test
+import io.cuttlefish.RegisterType
+import io.cuttlefish.parsing.ImmediateToken
+import io.cuttlefish.parsing.Lexer
+import io.cuttlefish.parsing.MnemonicToken
+import io.cuttlefish.parsing.RegisterToken
+import io.cuttlefish.parsing.StringLiteralToken
+import io.cuttlefish.parsing.SymbolReferenceToken
+import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 

@@ -1,17 +1,21 @@
 package io.cuttlefish
+
 import io.cuttlefish.backend.Backend
 import io.cuttlefish.components.Cpu
 import io.cuttlefish.components.MemoryBus
 import io.cuttlefish.components.PhysicalMemory
 import io.cuttlefish.parsing.Parser
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.io.File
 import kotlin.test.assertEquals
 
 abstract class ExecutionTestBase {
 
     protected suspend fun executeAsm(asm: String): Cpu {
-        val file = File.createTempFile("test_prog", ".lx")
+        val file = withContext(Dispatchers.IO) {
+            File.createTempFile("test_prog", ".lx")
+        }
         file.writeText("$asm\n halt")
 
         val parser = Parser(file, 0.toShort())
