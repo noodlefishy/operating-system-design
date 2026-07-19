@@ -1,7 +1,8 @@
 package io.cuttlefish.linking
 
-import io.cuttlefish.*
+import io.cuttlefish.Instruction
 import io.cuttlefish.backend.*
+import io.cuttlefish.parsing.Parser
 import java.io.*
 
 class ObjectExcreter(val file: File) {
