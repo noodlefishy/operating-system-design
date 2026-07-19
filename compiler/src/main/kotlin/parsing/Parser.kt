@@ -75,6 +75,7 @@ class Parser(val file: File, val baseAddress: Short) {
                     ?: throwCompileError("Unsupported instruction or macro '${opToken.lexeme}'", opToken.line, opToken.column)
 
                 val stmt = builder(reader, opToken.line, opToken.column)
+                stmt.scope = ctx.currentGlobalScope
                 statements.add(stmt)
 
             } catch (e: SyntaxException) {

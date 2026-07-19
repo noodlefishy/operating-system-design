@@ -5,14 +5,20 @@ import io.cuttlefish.linking.*
 
 
 abstract class Statement(val line: Int, val col: Int) {
+
+    var scope = ""
     abstract val size: Int
     abstract fun generate(context: ParserContext, address: Short): List<Instruction>
+
+    protected fun resolveScopedName(name: String): String {
+        return if (name.startsWith(".")) scope + name else name
+    }
 
     protected fun resolve(arg: Argument, context: ParserContext, address: Short, type: RelocationType): Short {
         return when (arg) {
             is ImmArg -> arg.value
             is SymArg -> {
-                val scopedName = context.resolveScopedName(arg.name)
+                val scopedName = resolveScopedName(arg.name)
 
                 if (type == RelocationType.REL_7 && context.symbolTable.containsKey(scopedName)) {
                     val target = context.symbolTable[scopedName]!!

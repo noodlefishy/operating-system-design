@@ -22,7 +22,7 @@ class MacroMovi(val r1: RegisterType, val arg: Argument, line: Int, col: Int) : 
                 lliPart = (arg.value.toInt() and 0x3F).toShort()
             }
             is SymArg -> {
-                val scoped = context.resolveScopedName(arg.name)
+                val scoped = resolveScopedName(arg.name)
                 if (!context.symbolTable.containsKey(scoped) && scoped !in context.imports) {
                     context.imports.add(scoped)
                 }

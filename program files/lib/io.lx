@@ -27,23 +27,23 @@ readln:
     movi r3, 0xFF02
     movi r4, #10            // Load the newline check outside the loop using a safe register!
 
-.readln_loop:
-    lw   r5, [r3 + 0]
-    beq  r5, r0, .readln_loop
+	.loop:
+		lw   r5, [r3 + 0]
+		beq  r5, r0, .loop
 
-    lw   r5, [r2 + 0]
+		lw   r5, [r2 + 0]
 
-    // Check if the user pressed Enter BEFORE we save it!
-    beq  r5, r4, .readln_done
+		// Check if the user pressed Enter BEFORE we save it!
+		beq  r5, r4, .done
 
-    sw   r5, [r1 + 0]       // It's a valid character, save it!
-    addi r1, r1, #1
-    beq  r0, r0, .readln_loop
+		sw   r5, [r1 + 0]       // It's a valid character, save it!
+		addi r1, r1, #1
+		beq  r0, r0, .loop
 
-.readln_done:
-    sw   r0, [r1 + 0]
+	.done:
+		sw   r0, [r1 + 0]
 
-    pop  r1                 // Restore original pointer for main!!
-    pop  r5
-    pop  r4
-    ret
+		pop  r1                 // Restore original pointer for main!!
+		pop  r5
+		pop  r4
+		ret

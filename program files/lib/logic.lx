@@ -3,18 +3,18 @@
 shl:
     push r4
 
-    beq r2 r0 .shl_done
+    beq r2 r0 .done
     add r4 r2 r0         // r4 is our loop counter
 
-.shl_loop:
-    add r1 r1 r1         // Shift left by 1 bit (r1 = r1 + r1)
-    addi r4 r4 -1
-    beq r4 r0 .shl_done
-    beq r0 r0 .shl_loop
-
-.shl_done:
-    pop r4
-    ret
+	.loop:
+		add r1 r1 r1         // Shift left by 1 bit (r1 = r1 + r1)
+		addi r4 r4 -1
+		beq r4 r0 .done
+		beq r0 r0 .loop
+	
+	.done:
+		pop r4
+		ret
 
 
 // r1 = Value, r2 = Shift Amount
@@ -51,47 +51,6 @@ nor:
     nand r1 r1 r2
     nand r1 r1 r1
     ret
-
-//// "improved"
-//nor_2:
-//    call or
-//    call not
-//    ret
-//
-//// not improved
-//nor_2_2:
-//    // push r7
-//    sw r7, r6, 0
-//    addi r6, r6, 1
-//
-//    // movi r7 or
-//    lui r7 or
-//    lli r7 or
-//
-//    // call or
-//    jalr r7 r7 0
-//
-//    // pop or
-//    addi r6, r6, -1
-//    lw r7, r6, 0
-//
-//    // push r7
-//    sw r7, r6, 0
-//    addi r6, r6, 1
-//
-//    // movi r7
-//    lui r7 not
-//    lli r7 not
-//
-//    // call not
-//    jalr r7 r7 0
-//
-//    // pop r7
-//    addi r6, r6, -1
-//    lw r7, r6, 0
-//
-//    // ret
-//    jalr r0 r7 0
 
 not:
     nand r1 r1 r1
