@@ -444,11 +444,11 @@ class Parser(val file: File, val baseAddress: Short) {
         return instructions
     }
 }
-
+@Deprecated("BAD")
 class CompilationException(
     val fileName: String, val sourceLine: SourceLine, val errorMessage: String
 ) : Exception()
-
+@Deprecated("BAD")
 data class SourceLine(
     val tokens: List<String>, val lineNumber: Int, val rawText: String
 )
