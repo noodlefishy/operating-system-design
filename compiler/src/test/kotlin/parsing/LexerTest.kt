@@ -50,7 +50,7 @@ class LexerTest {
     @Test
     fun testNumberAndMagicTokenising() {
         // Tests decimal, positive hex, negative hex, and $SBIT magic value
-        val input = "10 0x1A -0x10 \$SBIT"
+        val input = $$"10 0x1A -0x10 $SBIT"
         val lexer = Lexer(input)
         val tokens = lexer.tokenise()
 

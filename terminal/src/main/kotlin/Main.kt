@@ -170,7 +170,7 @@ private fun handleCompile(args: List<String>) {
     outFile.writeText(machineCode.joinToString("\n"))
 }
 
-private fun handleBuild(args: List<String>) {
+private suspend fun handleBuild(args: List<String>) {
     if (args.isEmpty()) throw IllegalArgumentException("Missing input files for -b")
 
     val isDebug = args.contains("--debug")
@@ -196,7 +196,7 @@ private fun handleBuild(args: List<String>) {
     File(outPath).writeText("@$baseAddr\n" + finalBinary.joinToString("\n"))
 
     if (isDebug) {
-        runBlocking { generateDebugFiles(baseName, baseAddr.toUShort(), finalBinary.toList(), p1, null, null) }
+        generateDebugFiles(baseName, baseAddr.toUShort(), finalBinary.toList(), p1, null, null)
     }
 }
 
