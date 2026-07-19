@@ -33,3 +33,9 @@ object SkipToken : Token {
     override val line: Int = 0
     override val column: Int = 0
 }
+
+object EndOfLineToken : Token {
+    override val lexeme: String = "\\n"
+    override val line: Int = 0
+    override val column: Int = 0
+}
