@@ -1,7 +1,15 @@
 package io.cuttlefish.debugging
 
+import io.cuttlefish.*
+
 data class CpuState(
-    var pcCurrent: UShort,
-    var memoryCurrent: Short,
-//    var instruction: Instruction,
+    val pcCurrent: UShort,
+    val memoryCurrent: Short,
+    val instructionCurrent: Instruction,
+    val registersCurrent: Map<RegisterType, Short>,
+    //
+    val pcNext: UShort,
+    val memoryNext: Short,
+    val instructionNext: Instruction,
+
 )
