@@ -123,7 +123,7 @@ private suspend fun runCpuSafely(
     dumpLength: Int,
     onHaltOrCrash: (suspend (Exception?) -> Unit)? = null
 ) {
-    var crashException: Exception? = null
+    var crashException: Exception?
     Signal.handle(Signal("INT")) { _ ->
         runBlocking {
             crashException = Exception("Keyboard Interrupt")
@@ -387,9 +387,6 @@ private suspend fun generateDebugFiles(
             val hexVal = "0x" + (value.toInt() and 0xFFFF).toString(16).uppercase().padStart(4, '0')
             regsText.append("$regName : $value ($hexVal)\n")
         }
-        regsText.append("\n--- CPU History (Last ${cpu.history.size} steps) ---\n")
-        cpu.history.forEach { regsText.append(it).append("\n") }
-
         File("debug/$baseName.regs").writeText(regsText.toString())
     }
 }
@@ -431,9 +428,6 @@ private suspend fun throwRuntimeError(cpu: Cpu, e: Exception, baseAddr: UShort, 
         val hexVal = "0x" + (value.toInt() and 0xFFFF).toString(16).uppercase().padStart(4, '0')
         System.err.println("    $regName : $value ($hexVal)")
     }
-    System.err.println("==================================================\n")
-    System.err.println(" History of ${cpu.history.size} entries:")
-    cpu.history.toTypedArray().forEach { System.err.println("    $it") }
     System.err.println("==================================================\n")
     printHexDump(cpu.mmu, baseAddr, dumpLength, returnData = false, printToConsole = true)
     System.err.println("==================================================\n")
@@ -485,7 +479,7 @@ suspend fun printHexDump(
             val currentAddr = (addr + i).toShort()
             val word = try {
                 memory.read(currentAddr.toUShort()).toInt() and 0xFFFF
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 0x0000
             }
 
