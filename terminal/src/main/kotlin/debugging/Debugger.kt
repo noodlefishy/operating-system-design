@@ -6,7 +6,8 @@ import io.cuttlefish.components.*
 
 class Debugger(val cpu: Cpu, val memory: MemoryBus) {
     val symbolMap: Map<String, UShort> = mapOf()
-    val labelMap: Map<UShort, String> = symbolMap.map { it.value to it.key }.toMap()
+
+    //    val labelMap: Map<UShort, String> = symbolMap.map { it.value to it.key }.toMap()
     val history = ArrayDeque<String>(50)
     val breakPoints = mutableSetOf<UShort>()
 
@@ -44,4 +45,10 @@ class Debugger(val cpu: Cpu, val memory: MemoryBus) {
         )
 
     }
+
+    private fun decipherLabel(label: UShort): String? {
+        val labels: Map<UShort, String> = symbolMap.map<String, UShort, Pair<UShort, String>> { it.value to it.key }.toMap()
+        return labels[label]
+    }
+
 }
